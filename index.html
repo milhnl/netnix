@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Netnix</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://unpkg.com/react@16.4.1/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@16.4.1/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/polyfill@7.6.0/dist/polyfill.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+      @media (prefers-color-scheme: dark) {
+        body {
+          background: #222;
+          color: white;
+          --button-color: #444;
+          --header-color: #333;
+        }
+      }
+      @media (prefers-color-scheme: light) {
+        body {
+          background: white;
+          color: #555;
+          --button-color: #ddd;
+          --header-color: #eee;
+        }
+      }
+      @media (max-width: 200px) {
+        body {
+          --item-size: 100vw;
+          --header-height: 15vw;
+        }
+      }
+      @media (min-width: 200px) {
+        body {
+          --item-size: 50vw;
+          --header-height: 10vw;
+        }
+      }
+      @media (min-width: 600px) {
+        body {
+          --item-size: 33.33vw;
+          --header-height: 6vw;
+        }
+      }
+      @media (min-width: 800px) {
+        body {
+          --item-size: 25vw;
+          --header-height: 4vw;
+        }
+      }
+      @media (min-width: 1000px) {
+        body {
+          --item-size: 20vw;
+          --header-height: 3vw;
+        }
+      }
+      body {
+        width: 100vw;
+        margin: 0;
+        overflow-x: hidden;
+        font-family: sans-serif;
+      }
+      /*
+      #root {
+        display: grid;
+        grid-template-columns: repeat(12, 1fr);
+        grid-template-rows: 5vw 20vw;
+      }*/
+
+      header {
+        display: flex;
+        flex-direction: row;
+        height: var(--header-height);
+        vertical-align: middle;
+        background-color: var(--header-color);
+        font-size: calc(var(--header-height) * 0.5);
+        padding-right: var(--header-height);
+      }
+      header button {
+        display: block;
+        flex: 0 var(--header-height);
+        border: 0;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        height: var(--header-height);
+        width: var(--header-height);
+        padding: 0vmin 1vmin 0vmin;
+        background-color: var(--button-color);
+        font-size: calc(var(--header-height) * 0.7);
+      }
+      header span {
+        flex: 1;
+        text-align: center;
+        line-height: var(--header-height);
+      }
+      img:not([src]) { display:none; }
+      img {
+        object-fit: cover;
+        height: inherit;
+        width: inherit;
+      }
+      div.dir {
+        cursor: pointer;
+        float: left;
+        width: var(--item-size);
+        height: var(--item-size);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+      class Directory extends React.Component {
+        constructor(props) {
+          super(props);
+          this.state = { imageUrl: null, url: null };
+        }
+        replaceImage() {
+          this.setState({ imageUrl: null });
+          ["folder.jpg", "folder.png", "default.png"]
+            .map(x => this.props.url + "/" + x)
+           .forEach(url => {
+              fetch(url)
+                .then(x => x.status === 200 ? x.blob() : Promise.reject())
+                .then(x => this.setState({ imageUrl: url }))
+                .catch(e => {});
+            });
+        }
+        componentDidMount() {
+          this.replaceImage()
+        }
+        componentDidUpdate(prevProps) {
+          if (this.props.url !== prevProps.url) {
+            this.replaceImage()
+          }
+        }
+        render() {
+          return (
+            <div class="dir" onClick={() => this.props.load(this.props.url)}>
+              <img
+                ref={img => (this.img = img)}
+                src={this.state.imageUrl}
+                alt={this.props.name}
+              />
+            </div>
+          );
+        }
+      }
+
+      class File extends React.Component {
+        render = () => (
+          <React.Fragment>
+            <a href={this.props.url}>{this.props.name}</a>
+            <br />
+          </React.Fragment>
+        );
+      }
+
+      class App extends React.Component {
+        constructor(props) {
+          super(props);
+          this.state = this.props.initialState;
+        }
+
+        load = url =>
+          url == ""
+            ? this.setState(this.props.initialState)
+            : fetch(url + "/")
+                .then(x => x.json())
+                .then(x =>
+                  this.setState({
+                    pwd: url,
+                    content: x.map(y => ({ ...y, url: url + "/" + y.name }))
+                  })
+                );
+
+        render() {
+          return (
+            <React.Fragment>
+              <header>
+                <button
+                  id="back"
+                  onClick={() =>
+                    this.load(this.state.pwd.replace(/\/[^\/]*$/, ""))
+                  }
+                >
+                  &laquo;
+                </button>
+                <span>{this.state.pwd.replace(/^[^\/]*\//, "")}</span>
+              </header>
+              {this.state.content
+                .filter(x => x.name !== ".." && x.name !== "folder.jpg")
+                .map(x =>
+                  x.type === "directory" ? (
+                    <Directory name={x.name} url={x.url} load={this.load} />
+                  ) : (
+                    <File name={x.name} url={x.url} load={this.load} />
+                  )
+                )}
+            </React.Fragment>
+          );
+        }
+      }
+
+      ReactDOM.render(
+        <App
+          initialState={{
+            pwd: "/",
+            content: [
+              { name: "Series", url: "/Series", type: "directory" },
+              { name: "Films", url: "/Films", type: "directory" },
+              { name: "Music", url: "/Music", type: "directory" }
+            ]
+          }}
+        />,
+        document.getElementById("root")
+      );
+    </script>
+  </body>
+</html>
