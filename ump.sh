@@ -28,10 +28,10 @@ ump_applemusic() {
 
 # PROVIDER: YOUTUBE -----------------------------------------------------------
 mpv_ensure_running() {
-    ps -Aocomm | grep -q mpv && [ -S "$MPV_SOCKET" ] \
-        || daemon mpv --idle --input-ipc-server"=~~/socket" \
-        || die "Can't start idle mpv"
-    until mpv_command get_version >/dev/null; do sleep 1; done
+    if ! mpv_command get_version >/dev/null; then
+        daemon mpv --idle --input-ipc-server="$MPV_SOCKET"
+        until mpv_command get_version >/dev/null; do sleep 1; done
+    fi
 }
 
 mpv_command() {
