@@ -40,7 +40,13 @@ mpv_command() {
         printf '{ "command": ['
         for x; do printf '"%s",' "$x"; done
         echo ']}'
-    } | nc -U "$MPV_SOCKET"
+    } | {
+        if exists socat; then
+            socat - "$MPV_SOCKET" 2>/dev/null;
+        else
+            nc -U "$MPV_SOCKET";
+        fi
+    }
 }
 
 video_lib_location() {
