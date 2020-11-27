@@ -47,9 +47,9 @@ video_lib_location() {
     if [ -n "${UMP_VIDEO_LIBRARY:-}" ]; then
         echo "${UMP_VIDEO_LIBRARY:-}"
     elif exists xdg-user-dir; then
-        echo "$(xdg-user-dir MUSIC)/Videos"
+        echo "$(xdg-user-dir MUSIC)"
     else
-        echo "$XDG_DATA_HOME/ump/videos"
+        echo "$XDG_DATA_HOME/ump/downloaded"
     fi
 }
 
