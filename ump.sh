@@ -91,6 +91,7 @@ ump_youtube() {
     toggle) mpv_command cycle pause;;
     prev) shift; mpv_command playlist_prev;;
     next) shift; mpv_command playlist_next;;
+    exec) shift; "$@";;
     *) die 'Error: unsupported operation';;
     esac
 }
