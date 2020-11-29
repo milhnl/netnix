@@ -66,6 +66,17 @@ video_lib_location() {
     fi
 }
 
+ump_youtube_move_file() { #1:file 2:json
+    set -- "$1" "$2" "$(<"$2" jq -r '(.artist + " - " + .track)')"
+    [ "$3" != " - " ] \
+        || set -- "$1" "$2" "$(<"$2" jq -r .title | yt_title_clean)"
+    set -- "$1" "$2" \
+        "$UMP_VIDEO_LIBRARY/$3.${1##*.}" "$UMP_VIDEO_LIBRARY/.$3.info.json"
+    [ "$1" = "$3" ] || mv "$1" "$3" >&2
+    [ "$2" = "$4" ] || mv "$2" "$4" >&2
+    echo "$3"
+}
+
 ump_youtube_download() (
     mkdir -p "$UMP_VIDEO_LIBRARY"
     cd "$(mktemp -d)"
@@ -73,14 +84,9 @@ ump_youtube_download() (
         --download-archive "$UMP_VIDEO_LIBRARY/.ytdl-archive" \
         --write-info-json \
         -o 'ytdl.%(ext)s' "$*" >&2
-    set -- "$(<ytdl.info.json jq -r '(.artist + " - " + .track)')"
-    set -- "$([ "$1" = " - " ]
-            && <ytdl.info.json jq -r .title | yt_title_clean
-            || echo "$1")" \
-        "$(find . -type f | sed 's/.*\.//' | grep -E 'mkv|webm|mp4')"
-    mv "ytdl.$2" "$UMP_VIDEO_LIBRARY/$1.$2" >&2
-    mv "ytdl.info.json" "$UMP_VIDEO_LIBRARY/.$1.info.json" >&2
-    echo "$UMP_VIDEO_LIBRARY/$1.$2"
+    ump_youtube_move_file \
+        "$(find . -name '*.webm' -o -name '*.mkv' -o -name '*.mp4')" \
+        ytdl.info.json
 )
 
 ump_youtube_cached() {
