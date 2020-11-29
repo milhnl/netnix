@@ -66,7 +66,10 @@ ump_youtube_download() (
         --download-archive "$UMP_VIDEO_LIBRARY/.ytdl-archive" \
         --write-info-json \
         -o 'ytdl.%(ext)s' "$*" >&2
-    set -- "$(<ytdl.info.json jq -r .title | yt_title_clean)" \
+    set -- "$(<ytdl.info.json jq -r '(.artist + " - " + .track)')"
+    set -- "$([ "$1" = " - " ]
+            && <ytdl.info.json jq -r .title | yt_title_clean
+            || echo "$1")" \
         "$(find . -type f | sed 's/.*\.//' | grep -E 'mkv|webm|mp4')"
     mv "ytdl.$2" "$UMP_VIDEO_LIBRARY/$1.$2" >&2
     mv "ytdl.info.json" "$UMP_VIDEO_LIBRARY/.$1.info.json" >&2
