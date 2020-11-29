@@ -23,6 +23,13 @@ ump_applemusic() {
     toggle) osascript -e 'tell application "Music" to playpause';;
     prev) osascript -e 'tell application "Music" to previous track';;
     next) osascript -e 'tell application "Music" to next track';;
+    current)
+        osascript -e '
+            tell application "Music"
+                copy (artist of current track) & " - " ¬
+                    & (name of current track) to stdout
+            end tell'
+        ;;
     *) die 'Error: unsupported operation';;
     esac
 }
@@ -94,6 +101,8 @@ ump_youtube() {
     toggle) mpv_command cycle pause;;
     prev) shift; mpv_command playlist_prev;;
     next) shift; mpv_command playlist_next;;
+    current) mpv_command get_property media-title | jq -r .data \
+        | sed 's/\.[^.]*$//';;
     exec) shift; "$@";;
     *) die 'Error: unsupported operation';;
     esac
