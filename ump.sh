@@ -6,6 +6,7 @@ set -eu
 daemon() ( exec "$@" >/dev/null 2>&1 & )
 die() { printf '%s\n' "$*" >&2; exit 1; }
 exists() { command -v "$1" >/dev/null 2>&1; }
+to_argv() { while read -r LINE; do set -- "$@" "$LINE"; done; "$@"; }
 
 # PROVIDER: APPLE MUSIC -------------------------------------------------------
 ump_applemusic() {
@@ -95,15 +96,43 @@ ump_youtube_cached() {
     [ -n "$1" ] && echo "$1" || return 1
 }
 
+ump_youtube_ui() {
+    find "$UMP_VIDEO_LIBRARY" -maxdepth 1 \( \
+            -name '*.mkv' -o -name '*.webm' -o -name '*.mp4' \) \
+        | sed 's_.*/__;s/\.[a-z0-9]*$//' \
+        | fzy \
+        | to_argv "$@"
+}
+
+ump_youtube_now() {
+    mpv_command loadfile \
+        "$(ump_youtube_cached "$@" || echo "ytdl://ytsearch:$*")"
+}
+
+ump_youtube_add() {
+    mpv_command loadfile \
+        "$(ump_youtube_cached "$@" || ump_youtube_download "$@")" append-play
+}
+
 ump_youtube() {
     MPV_SOCKET="${MPV_SOCKET:-$XDG_CONFIG_HOME/mpv/socket}"
     UMP_VIDEO_LIBRARY="$(video_lib_location)"
     mpv_ensure_running
     case "$1" in
-    now) shift; mpv_command loadfile \
-        "$(ump_youtube_cached "$@" || echo "ytdl://ytsearch:$*")";;
-    add) shift; mpv_command loadfile \
-        "$(ump_youtube_cached "$@" || ump_youtube_download "$@")" append-play;;
+    now)
+        shift;
+        if [ $# -eq 0 ]; then
+            ump_youtube_ui ump_youtube_now
+        else
+            ump_youtube_now "$@"
+        fi;;
+    add)
+        shift;
+        if [ $# -eq 0 ]; then
+            ump_youtube_ui ump_youtube_add
+        else
+            ump_youtube_add "$@"
+        fi;;
     toggle) mpv_command cycle pause;;
     prev) shift; mpv_command playlist_prev;;
     next) shift; mpv_command playlist_next;;
