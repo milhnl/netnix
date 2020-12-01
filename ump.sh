@@ -87,6 +87,9 @@ ump_youtube_organise() {
         ump_youtube_move_file "$x" \
             "$(dirname "$x")/.$(basename "${x%.*}").info.json"
     done
+    cat "$UMP_VIDEO_LIBRARY"/.*.json \
+        | jq -r '(.extractor + " " + .id)' \
+        >"$UMP_VIDEO_LIBRARY/.ytdl-archive"
 }
 
 ump_youtube_download() (
