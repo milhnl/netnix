@@ -7,6 +7,7 @@ daemon() ( exec "$@" >/dev/null 2>&1 & )
 die() { printf '%s\n' "$*" >&2; exit 1; }
 exists() { command -v "$1" >/dev/null 2>&1; }
 to_argv() { while read -r LINE; do set -- "$@" "$LINE"; done; "$@"; }
+in_dir() ( cd "$1"; shift; "$@"; )
 
 # PROVIDER: APPLE MUSIC -------------------------------------------------------
 ump_applemusic() {
@@ -149,6 +150,9 @@ ump_youtube() {
     current) mpv_command get_property media-title | jq -r .data \
         | sed 's/\.[^.]*$//';;
     exec) shift; "$@";;
+    rsync) shift; in_dir "$UMP_VIDEO_LIBRARY" rsync --progress -rh \
+        --exclude '*/' --include '*.mp4' --include '*.mkv' --include '*.webm' \
+        --include '.*.info.json' "$@";;
     *) die 'Error: unsupported operation';;
     esac
 }
