@@ -78,6 +78,15 @@ ump_youtube_move_file() { #1:file 2:json
     echo "$3"
 }
 
+ump_youtube_organise() {
+    for x in "$UMP_VIDEO_LIBRARY"/*.webm "$UMP_VIDEO_LIBRARY"/*.mkv \
+            "$UMP_VIDEO_LIBRARY"/*.mp4; do
+        [ -e "$x" ] || continue
+        ump_youtube_move_file "$x" \
+            "$(dirname "$x")/.$(basename "${x%.*}").info.json"
+    done
+}
+
 ump_youtube_download() (
     mkdir -p "$UMP_VIDEO_LIBRARY"
     cd "$(mktemp -d)"
