@@ -38,21 +38,24 @@ s/1080p//;
 s/720p//;
 s/ \{0,1\}([12][0-9]\{3\})//;
 
+#Preserve album/ep tag
 s/[Ff][Uu][Ll][Ll] [Ee][Pp]$/[EP]/;
 s/- \([Ff][Uu][Ll][Ll] \)\{0,1\}[Ee][Pp]$/[EP]/;
 s/[({[]\{1,\}\([Ff][Uu][Ll][Ll] \)\{0,1\}[Ee][Pp][]})]\{1,\}/[EP]/;
+s/[Ff][Uu][Ll][Ll] [Ll][Pp]/album/;
 s/[Ff][Uu][Ll][Ll] [Aa][Ll][Bb][Uu][Mm]/album/;
 s/[Aa][Ll][Bb][Uu][Mm] [Ss][Tt][Rr][Ee][Aa][Mm]/album/;
 s/\(- \)\{0,1\}[({[]\{0,1\}album[^]})]*[]})]\{0,1\}/[Album]/;
 
-
-
+#Clean some remnants
+s/ \{2,\}/ /g;
 s/ *( *)//g;
 s/ *\[ *\]//g;
 s/ *{ *}//g;
 s/ *$//;
 s/- *-/-/g;
 
+#Fix some Artist - Trackname variations
 s/\([^ ]\)- /\1 - /;
 s/\(.*\) - "\([^"]*\)"$/\1 - \2/;
 '"s/\(.*\) - '\([^']*\)'\$/\1 - \2/;"'
