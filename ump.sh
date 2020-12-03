@@ -68,11 +68,16 @@ video_lib_location() {
     fi
 }
 
+ump_youtube_video_name() { #1:json
+    set -- "$1" "$(<"$1" jq -r '(.artist + " - " + .track)')"
+    [ "$2" != " - " ] \
+        && echo "$2" \
+        || <"$1" jq -r .title | yt_title_clean
+}
+
 ump_youtube_move_file() { #1:file 2:json
-    set -- "$1" "$2" "$(<"$2" jq -r '(.artist + " - " + .track)')"
-    [ "$3" != " - " ] \
-        || set -- "$1" "$2" "$(<"$2" jq -r .title | yt_title_clean)"
-    set -- "$1" "$2" "$(echo "$3" | sed 's_ \{0,1\}/ \{0,1\}_ - _g')"
+    set -- "$1" "$2" \
+        "$(ump_youtube_video_name "$2" | sed 's_ \{0,1\}/ \{0,1\}_ - _g')"
     set -- "$1" "$2" \
         "$UMP_VIDEO_LIBRARY/$3.${1##*.}" "$UMP_VIDEO_LIBRARY/.$3.info.json"
     [ "$1" = "$3" ] || mv "$1" "$3" >&2
