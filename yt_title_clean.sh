@@ -2,6 +2,15 @@
 #yt_title_clean - clean up music title from youtube
 
 exec sed '
+#Some weird characters
+s/ / /g; #No-break space
+s/⁠//g; #Word joiner
+s/—/-/g;
+s/⁠—/-/g;
+s/–/-/g;
+s/—/-/g;
+
+#(Mostly parenthesized)
 s/\( *- \)\{0,1\}[Oo][Ff][Ff][Ii][Cc][Ii][Aa][Ll][^][(){}.-]*//;
 s/\( *- \)\{0,1\}[Ee][Xx][Tt][Ee][Nn][Dd][Ee][Dd][^][(){}.-]*//;
 s/\( *- \)\{0,1\}[Ww][Ii][Tt][Hh] [Ll][Yy][Rr][Ii][Cc][Ss]//;
@@ -22,6 +31,7 @@ s/([^()]*[Vv][Ii][Dd][Ee][Oo])//;
 s/[Ll][Ii][Vv][Ee]/Live/;
 s/[• ]*[Ll]yrics//;
 s/\.mp4//;
+s/[({[][0-9]\{3,4\}[Pp]\{0,1\} .*[]})]//; #(1080p gaaarbage)
 s/HQ//;
 s/HD Video//;
 s/1080p//;
@@ -35,10 +45,12 @@ s/[Ff][Uu][Ll][Ll] [Aa][Ll][Bb][Uu][Mm]/album/;
 s/[Aa][Ll][Bb][Uu][Mm] [Ss][Tt][Rr][Ee][Aa][Mm]/album/;
 s/\(- \)\{0,1\}[({[]\{0,1\}album[^]})]*[]})]\{0,1\}/[Album]/;
 
-s/[({[][0-9]\{3,4\}[Pp]\{0,1\} .*[]})]//; #(1080p gaaarbage)
 
-s/–/-/g;
-s/—/-/g;
+
+s/ *( *)//g;
+s/ *\[ *\]//g;
+s/ *{ *}//g;
+s/ *$//;
 s/- *-/-/g;
 
 s/\([^ ]\)- /\1 - /;
@@ -52,9 +64,4 @@ s/\(.*\) - "\([^"]*\)"$/\1 - \2/;
 '"/'[^-']*'[^-']*'\$/s/\([^']*\) '\([^']*\)'/\1 - \2/;"'
 /[^-●]*●●[^-●]*$/s/\(.*[^ ]\) *●● */\1 - /;
 /[^-|]*|[^-|]*$/s/\(.*[^ ]\) *| */\1 - /;
-
-s/ *( *)//g;
-s/ *\[ *\]//g;
-s/ *{ *}//g;
-s/ *$//;
 '
