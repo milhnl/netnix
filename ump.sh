@@ -98,11 +98,10 @@ ump_youtube_move_file() { #1:file 2:json
 }
 
 ump_youtube_organise() {
-    for x in "$UMP_VIDEO_LIBRARY"/*.webm "$UMP_VIDEO_LIBRARY"/*.mkv \
-            "$UMP_VIDEO_LIBRARY"/*.mp4; do
-        [ -e "$x" ] || continue
-        ump_youtube_move_file "$x" \
-            "$(dirname "$x")/.$(basename "${x%.*}").info.json"
+    for json in "$UMP_VIDEO_LIBRARY"/.*.info.json; do
+        video="$(find_video "$(dirname "$json")/$(basename "$json" \
+            | sed 's/^\.//;s/\.info\.json$//')")" || rm "$json"
+        ump_youtube_move_file "$video" "$json"
     done
     cat "$UMP_VIDEO_LIBRARY"/.*.json \
         | jq -r '(.extractor + " " + .id)' \
