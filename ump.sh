@@ -68,6 +68,18 @@ video_lib_location() {
     fi
 }
 
+find_video() {
+    if [ -e "$1.mkv" ]; then
+        echo "$1.mkv"
+    elif [ -e "$1.webm" ]; then
+        echo "$1.webm"
+    elif [ -e "$1.mp4" ]; then
+        echo "$1.mp4"
+    else
+        false
+    fi
+}
+
 ump_youtube_video_name() { #1:json
     set -- "$1" "$(<"$1" jq -r '(.artist + " - " + .track)')"
     [ "$2" != " - " ] \
@@ -105,7 +117,7 @@ ump_youtube_download() (
         --write-info-json \
         -o 'ytdl.%(ext)s' "$*" >&2
     ump_youtube_move_file \
-        "$(find . -name '*.webm' -o -name '*.mkv' -o -name '*.mp4')" \
+        "$(find_video ytdl)" \
         ytdl.info.json
 )
 
