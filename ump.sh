@@ -76,7 +76,7 @@ find_video() {
     elif [ -e "$1.mp4" ]; then
         echo "$1.mp4"
     else
-        false
+        return 1
     fi
 }
 
@@ -100,7 +100,7 @@ ump_youtube_move_file() { #1:file 2:json
 ump_youtube_organise() {
     for json in "$UMP_VIDEO_LIBRARY"/.*.info.json; do
         video="$(find_video "$(dirname "$json")/$(basename "$json" \
-            | sed 's/^\.//;s/\.info\.json$//')")" || rm "$json"
+            | sed 's/^\.//;s/\.info\.json$//')")" || { rm "$json"; continue; }
         ump_youtube_move_file "$video" "$json"
     done
     cat "$UMP_VIDEO_LIBRARY"/.*.json \
