@@ -18,6 +18,9 @@ s/\( *- \)\{0,1\}[Oo][Rr][Ii][Gg][Ii][Nn][Aa][Ll] [Mm][Ii][Xx]//;
 s/\( *- \)\{0,1\}[Mm][Uu][Ss][Ii][Cc] [Vv][Ii][Dd][Ee][Oo]//;
 s/\( *- \)\{0,1\}[Aa][Uu][Dd][Ii][Oo] [Oo][Nn][Ll][Yy]//;
 s/\( *- \)\{0,1\}[Ll][Yy][Rr][Ii][Cc] [Vv][Ii][Dd][Ee][Oo]//;
+s/\( *- \)\{0,1\}[Aa][Nn][Ii][Mm][Aa][Tt][Ee][Dd] [Vv][Ii][Dd][Ee][Oo]//;
+s/\( *- \)\{0,1\}[Hh][Dd] [Vv][Ii][Dd][Ee][Oo]//;
+s/\( *- \)\{0,1\}[Hh][Dd] [Aa][Uu][Dd][Ii][Oo]//;
 s/\( *- \)\{0,1\}[Aa][Uu][Dd][Ii][Oo]//;
 s/\( *- \)\{0,1\}[Vv][Ii][Dd][Ee][Oo]//;
 s/\( *- \)\{0,1\}[Ss][Ii][Nn][Gg][Ll][Ee] [Vv][Ee][Rr][Ss][Ii][Oo][Nn]//;
@@ -33,6 +36,8 @@ s/[• ]*[Ll]yrics//;
 s/\.mp4//;
 s/[({[][0-9]\{3,4\}[Pp]\{0,1\} .*[]})]//; #(1080p gaaarbage)
 s/HQ//;
+s/\[HD\]//;
+s/ [Hh][Dd]$//;
 s/HD Video//;
 s/1080p//;
 s/720p//;
