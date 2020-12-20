@@ -130,18 +130,19 @@ ump_youtube_ui() {
     find "$UMP_VIDEO_LIBRARY" -maxdepth 1 \( \
             -name '*.mkv' -o -name '*.webm' -o -name '*.mp4' \) \
         | sed 's_.*/__;s/\.[a-z0-9]*$//' \
-        | fzy \
-        | to_argv "$@"
+        | fzy
 }
 
 ump_youtube_now() {
-    mpv_command loadfile \
-        "$(ump_youtube_cached "$@" || echo "ytdl://ytsearch:$*")"
+    [ "$#" -ne 0 ] || set -- "$(ump_youtube_ui)"
+    { ump_youtube_cached "$@" || echo "ytdl://ytsearch:$*"; } \
+        | ( mpv_command loadfile "$(cat)")
 }
 
 ump_youtube_add() {
-    mpv_command loadfile \
-        "$(ump_youtube_cached "$@" || ump_youtube_download "$@")" append-play
+    [ "$#" -ne 0 ] || set -- "$(ump_youtube_ui)"
+    { ump_youtube_cached "$@" || ump_youtube_download "$@"; } \
+        | ( mpv_command loadfile "$(cat)" append-play)
 }
 
 ump_youtube() {
@@ -149,20 +150,8 @@ ump_youtube() {
     UMP_VIDEO_LIBRARY="$(video_lib_location)"
     mpv_ensure_running
     case "$1" in
-    now)
-        shift;
-        if [ $# -eq 0 ]; then
-            ump_youtube_ui ump_youtube_now
-        else
-            ump_youtube_now "$@"
-        fi;;
-    add)
-        shift;
-        if [ $# -eq 0 ]; then
-            ump_youtube_ui ump_youtube_add
-        else
-            ump_youtube_add "$@"
-        fi;;
+    now) shift; ump_youtube_now "$@";;
+    add) shift; ump_youtube_add "$@";;
     toggle) mpv_command cycle pause;;
     prev) shift; mpv_command playlist_prev;;
     next) shift; mpv_command playlist_next;;
