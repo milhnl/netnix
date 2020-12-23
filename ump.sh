@@ -82,9 +82,10 @@ find_video() {
 
 ump_youtube_video_name() { #1:json
     set -- "$1" "$(<"$1" jq -r '(.artist + " - " + .track)')"
-    [ "$2" != " - " ] \
-        && echo "$2" \
-        || <"$1" jq -r .title | yt_title_clean
+    case "$2" in
+    \ -\ |*\ -\ |\ -\ *) <"$1" jq -r .title | yt_title_clean;;
+    *) echo "$2";;
+    esac
 }
 
 ump_youtube_move_file() { #1:file 2:json
