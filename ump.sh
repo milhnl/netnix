@@ -120,19 +120,18 @@ hash() {
         `'print(sha256(sys.argv[2].encode("utf-8")).hexdigest())' -- "$1"
 }
 
-ump_youtube_download() (
+ump_youtube_download() {
     set -- "$*" "$(hash "$*")"
     mkdir -p "$UMP_VIDEO_LIBRARY"
-    cd "$UMP_VIDEO_LIBRARY"
     youtube-dl --default-search ytsearch \
         --download-archive "$UMP_VIDEO_LIBRARY/.ytdl-archive" \
         --write-info-json \
-        -o ".ytdl-tmp-$2-%(autonumber)s.%(ext)s" "$1" >&2
-    for json in ".ytdl-tmp-$2"-*.info.json; do
+        -o "$UMP_VIDEO_LIBRARY/.ytdl-tmp-$2-%(autonumber)s.%(ext)s" "$1" >&2
+    for json in "$UMP_VIDEO_LIBRARY/.ytdl-tmp-$2"-*.info.json; do
         video="$(find_video "${json%%.info.json}")"
         ump_youtube_move_file "$video" "$json"
     done
-)
+}
 
 ump_youtube_cached() {
     set -- "$(find "$UMP_VIDEO_LIBRARY" -not -name '.*' -a \
