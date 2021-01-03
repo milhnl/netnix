@@ -47,7 +47,7 @@ mpv_ensure_running() {
 mpv_command() {
     {
         printf '{ "command": ['
-        for x; do printf '"%s",' "$x"; done
+        for x; do printf '%s' "$x" | sed 's/"/\\"/g;s/^/"/;s/$/",/'; done
         echo ']}'
     } | {
         if exists socat; then
@@ -124,7 +124,7 @@ ump_youtube_download() (
 
 ump_youtube_cached() {
     set -- "$(find "$UMP_VIDEO_LIBRARY" -not -name '.*' -a \
-        -iname "*$(for x; do printf "%s*" "$x"; done)")"
+        -iname "*$(for x; do echo "$x" | sed 's/[][*]/\\&/g;s/$/*/'; done)")"
     [ -n "$1" ] && echo "$1" || return 1
 }
 
