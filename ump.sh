@@ -136,7 +136,7 @@ ump_youtube_ui() {
 }
 
 ump_youtube_now() {
-    [ "$#" -ne 0 ] || set -- "$(ump_youtube_ui)"
+    [ "$#" -ne 0 ] || set -- "$(ump_youtube_ui)"; [ -n "$1" ] || return 1
     { ump_youtube_cached "$@" || echo "ytdl://ytsearch:$*"; } \
         | while read -r LINE; do
             mpv_command loadfile "$LINE" replace
@@ -144,7 +144,7 @@ ump_youtube_now() {
 }
 
 ump_youtube_add() {
-    [ "$#" -ne 0 ] || set -- "$(ump_youtube_ui)"
+    [ "$#" -ne 0 ] || set -- "$(ump_youtube_ui)"; [ -n "$1" ] || return 1
     { ump_youtube_cached "$@" || ump_youtube_download "$@"; } \
         | while read -r LINE; do
             mpv_command loadfile "$LINE" append-play
