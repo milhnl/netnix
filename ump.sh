@@ -38,7 +38,17 @@ ump_applemusic() {
 
 # PROVIDER: YOUTUBE -----------------------------------------------------------
 mpv_ensure_running() {
+    if ! exists ump_youtube_tell_mpv; then
+        if exists socat; then
+            ump_youtube_tell_mpv() { socat - "$MPV_SOCKET" 2>/dev/null; }
+        elif exists nc && [ "$(uname -s)" = Darwin ]; then
+            ump_youtube_tell_mpv() { nc -U "$MPV_SOCKET"; }
+        else
+            die "Error: socat (or netcat with unix pipes) is not installed"
+        fi
+    fi
     if ! mpv_command get_version >/dev/null 2>&1; then
+        exists mpv || die "Error: mpv is not installed"
         daemon mpv --idle --input-ipc-server="$MPV_SOCKET"
         until mpv_command get_version >/dev/null 2>&1; do sleep 1; done
     fi
@@ -49,13 +59,7 @@ mpv_command() {
         printf '{ "command": ['
         for x; do printf '%s' "$x" | sed 's/"/\\"/g;s/^/"/;s/$/",/'; done
         echo ']}'
-    } | {
-        if exists socat; then
-            socat - "$MPV_SOCKET" 2>/dev/null;
-        else
-            nc -U "$MPV_SOCKET";
-        fi
-    } | jq -esr '
+    } | ump_youtube_tell_mpv | jq -esr '
         if . == [] then
             "Error: could not connect to socket.\n" | halt_error
         elif .[0].error != "success" then
