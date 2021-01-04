@@ -38,9 +38,9 @@ ump_applemusic() {
 
 # PROVIDER: YOUTUBE -----------------------------------------------------------
 mpv_ensure_running() {
-    if ! mpv_command get_version >/dev/null; then
+    if ! mpv_command get_version >/dev/null 2>&1; then
         daemon mpv --idle --input-ipc-server="$MPV_SOCKET"
-        until mpv_command get_version >/dev/null; do sleep 1; done
+        until mpv_command get_version >/dev/null 2>&1; do sleep 1; done
     fi
 }
 
@@ -55,7 +55,14 @@ mpv_command() {
         else
             nc -U "$MPV_SOCKET";
         fi
-    }
+    } | jq -esr '
+        if . == [] then
+            "Error: could not connect to socket.\n" | halt_error
+        elif .[0].error != "success" then
+            "Error: \(.[0].error)\n" | halt_error
+        else
+            .[0] | .data
+        end'
 }
 
 video_lib_location() {
@@ -172,8 +179,7 @@ ump_youtube() {
     toggle) mpv_command cycle pause;;
     prev) shift; mpv_command playlist_prev;;
     next) shift; mpv_command playlist_next;;
-    current) mpv_command get_property media-title | jq -r .data \
-        | sed 's/\.[^.]*$//';;
+    current) mpv_command get_property media-title | sed 's/\.[^.]*$//';;
     exec) shift; "$@";;
     rsync) shift; in_dir "$UMP_VIDEO_LIBRARY" rsync --progress -rh \
         --exclude '*/' --include '*.mp4' --include '*.mkv' --include '*.webm' \
