@@ -3,7 +3,7 @@
 set -eu
 
 # COMMON ----------------------------------------------------------------------
-daemon() ( exec "$@" >/dev/null 2>&1 & )
+daemon() ( exec nohup "$@" >/dev/null 2>&1 & )
 die() { printf '%s\n' "$*" >&2; exit 1; }
 exists() { command -v "$1" >/dev/null 2>&1; }
 to_argv() { while read -r LINE; do set -- "$@" "$LINE"; done; "$@"; }
