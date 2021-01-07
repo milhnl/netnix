@@ -174,7 +174,7 @@ ump_youtube_add() {
 }
 
 ump_youtube() {
-    MPV_SOCKET="${MPV_SOCKET:-$XDG_CONFIG_HOME/mpv/socket}"
+    MPV_SOCKET="${MPV_SOCKET:-$XDG_RUNTIME_DIR/ump_mpv_socket}"
     UMP_VIDEO_LIBRARY="$(video_lib_location)"
     mpv_ensure_running
     case "$1" in
