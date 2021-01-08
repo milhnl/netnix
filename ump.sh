@@ -79,7 +79,7 @@ video_lib_location() {
     fi
 }
 
-find_video() {
+ump_youtube_find_ext() {
     if [ -e "$1.mkv" ]; then
         echo "$1.mkv"
     elif [ -e "$1.webm" ]; then
@@ -111,7 +111,7 @@ ump_youtube_move_file() { #1:file 2:json
 
 ump_youtube_organise() {
     for json in "$UMP_VIDEO_LIBRARY"/.*.info.json; do
-        video="$(find_video "$(dirname "$json")/$(basename "$json" \
+        video="$(ump_youtube_find_ext "$(dirname "$json")/$(basename "$json" \
             | sed 's/^\.//;s/\.info\.json$//')")" || { rm "$json"; continue; }
         ump_youtube_move_file "$video" "$json"
     done
@@ -139,14 +139,24 @@ ump_youtube_download() {
         --write-info-json \
         -o "$UMP_VIDEO_LIBRARY/.ytdl-tmp-$2-%(autonumber)s.%(ext)s" "$1" >&2
     for json in "$UMP_VIDEO_LIBRARY/.ytdl-tmp-$2"-*.info.json; do
-        video="$(find_video "${json%%.info.json}")"
+        video="$(ump_youtube_find_ext "${json%%.info.json}")"
         ump_youtube_move_file "$video" "$json"
     done
 }
 
+ump_youtube_find_by_name() {
+    set -- "*$(for x; do echo "$x" | sed 's/[][*]/\\&/g;s/$/*/'; done)"
+    case "$(find --help | grep -E 'iwholename|ipath|iname')" in
+    *iwholename*) set -- -iwholename "$1";;
+    *ipath*) set -- -ipath "$1";;
+    *iname*) set -- -iname "$1";;
+    *) set -- -name "$1";;
+    esac
+    find "$UMP_VIDEO_LIBRARY" -not -name '.*' -a "$@"
+}
+
 ump_youtube_cached() {
-    set -- "$(find "$UMP_VIDEO_LIBRARY" -not -name '.*' -a \
-        -iname "*$(for x; do echo "$x" | sed 's/[][*]/\\&/g;s/$/*/'; done)")"
+    set -- "$(ump_youtube_find_by_name "$@")"
     [ -n "$1" ] && echo "$1" || return 1
 }
 
