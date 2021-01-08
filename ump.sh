@@ -164,6 +164,7 @@ ump_youtube_ui() {
     find "$UMP_VIDEO_LIBRARY" -maxdepth 1 \( \
             -name '*.mkv' -o -name '*.webm' -o -name '*.mp4' \) \
         | sed 's_.*/__;s/\.[a-z0-9]*$//' \
+        | shuf \
         | fzy
 }
 
