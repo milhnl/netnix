@@ -145,7 +145,7 @@ ump_youtube_download() {
 }
 
 ump_youtube_find_by_name() {
-    set -- "*$(for x; do echo "$x" | sed 's/[][*]/\\&/g;s/$/*/'; done)"
+    set -- "*$(for x; do printf '%s' "$x" | sed 's/[][*]/\\&/g;s/$/*/'; done)"
     case "$(find --help | grep -E 'iwholename|ipath|iname')" in
     *iwholename*) set -- -iwholename "$1";;
     *ipath*) set -- -ipath "$1";;
