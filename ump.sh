@@ -157,7 +157,11 @@ ump_youtube_find_by_name() {
 
 ump_youtube_cached() {
     set -- "$(ump_youtube_find_by_name "$@")"
-    [ -n "$1" ] && echo "$1" || return 1
+    case "$1" in
+    "") return 1;;
+    *.mkv|*.mp4|*.webm) echo "$1";;
+    *) return 1;;
+    esac
 }
 
 ump_youtube_ui() {
