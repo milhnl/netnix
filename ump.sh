@@ -96,7 +96,7 @@ ump_youtube_video_name() { #1:json
     case "$2" in
     \ -\ |*\ -\ |\ -\ *) <"$1" jq -r .title | yt_title_clean;;
     *) echo "$2";;
-    esac
+    esac | if exists ump-title-clean; then ump-title-clean; else cat; fi
 }
 
 ump_youtube_move_file() { #1:file 2:json
