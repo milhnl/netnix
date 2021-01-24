@@ -174,8 +174,12 @@ ump_youtube_ui() {
 
 ump_youtube_now() {
     [ "$#" -ne 0 ] || set -- "$(ump_youtube_ui)"; [ -n "$1" ] || return 1
-    { ump_youtube_cached "$@" || echo "ytdl://ytsearch:$*"; } \
-        | while read -r LINE; do
+    {
+        ump_youtube_cached "$@" || case "$*" in
+            http*) echo "$*";;
+            *) echo "ytdl://ytsearch:$*";;
+        esac
+    } | while read -r LINE; do
             mpv_command loadfile "$LINE" replace
         done
 }
