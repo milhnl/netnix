@@ -6,6 +6,7 @@ set -eu
 daemon() ( exec nohup "$@" >/dev/null 2>&1 & )
 die() { printf '%s\n' "$*" >&2; exit 1; }
 exists() { command -v "$1" >/dev/null 2>&1; }
+fixed_as_regex() { echo "$1" | sed 's_[]$^*[\./]_\\&_g'; }
 to_argv() { while read -r LINE; do set -- "$@" "$LINE"; done; "$@"; }
 in_dir() ( cd "$1"; shift; "$@"; )
 
@@ -167,7 +168,7 @@ ump_youtube_cached() {
 ump_youtube_ui() {
     find "$UMP_VIDEO_LIBRARY" -maxdepth 1 \( \
             -name '*.mkv' -o -name '*.webm' -o -name '*.mp4' \) \
-        | sed 's_.*/__;s/\.[a-z0-9]*$//' \
+        | sed "s/$(fixed_as_regex "$UMP_VIDEO_LIBRARY/")//;"'s/\.[a-z0-9]*$//'\
         | shuf \
         | fzy
 }
