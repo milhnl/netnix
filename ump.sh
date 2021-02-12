@@ -55,19 +55,25 @@ mpv_ensure_running() {
     fi
 }
 
-mpv_command() {
-    {
-        printf '{ "command": ['
-        for x; do printf '%s' "$x" | sed 's/"/\\"/g;s/^/"/;s/$/",/'; done
-        echo ']}'
-    } | ump_youtube_tell_mpv | jq -esr '
+as_mpv_command() {
+    printf '{ "command": ['
+    for x; do printf '%s' "$x" | sed 's/"/\\"/g;s/^/"/;s/$/",/'; done
+    echo ']}'
+}
+
+mpv_ipc_response_jq() {
+    jq -esr '
         if . == [] then
             "Error: could not connect to socket.\n" | halt_error
         elif .[0].error != "success" then
             "Error: \(.[0].error)\n" | halt_error
         else
-            .[0] | .data
+            .[0].data'"${1:+ | $1}"'
         end'
+}
+
+mpv_command() {
+    as_mpv_command "$@" | ump_youtube_tell_mpv | mpv_ipc_response_jq
 }
 
 video_lib_location() {
