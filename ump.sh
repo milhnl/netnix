@@ -143,7 +143,7 @@ ump_youtube_download() {
     mkdir -p "$UMP_VIDEO_LIBRARY"
     youtube-dl --default-search ytsearch \
         --download-archive "$UMP_VIDEO_LIBRARY/.ytdl-archive" \
-        --write-info-json \
+        --write-info-json --add-metadata \
         -o "$UMP_VIDEO_LIBRARY/.ytdl-tmp-$2-%(autonumber)s.%(ext)s" "$1" >&2
     for json in "$UMP_VIDEO_LIBRARY/.ytdl-tmp-$2"-*.info.json; do
         video="$(ump_youtube_find_ext "${json%%.info.json}")"
