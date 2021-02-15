@@ -167,13 +167,20 @@ ump_youtube_cached() {
     case "$1" in
     "") return 1;;
     *.mkv|*.mp4|*.webm) echo "$1";;
+    *.aac|*.flac|*.mp3|*.wav) echo "$1";;
     *) return 1;;
     esac
 }
 
 ump_youtube_ui() {
-    find "$UMP_VIDEO_LIBRARY" -maxdepth 1 \( \
-            -name '*.mkv' -o -name '*.webm' -o -name '*.mp4' \) \
+    find "$UMP_VIDEO_LIBRARY" \
+            -name '*.mkv' \
+            -o -name '*.webm' \
+            -o -name '*.mp4' \
+            -o -name '*.aac' \
+            -o -name '*.flac' \
+            -o -name '*.mp3' \
+            -o -name '*.wav' \
         | sed "s/$(fixed_as_regex "$UMP_VIDEO_LIBRARY/")//;"'s/\.[a-z0-9]*$//'\
         | shuf \
         | fzy
@@ -199,6 +206,15 @@ ump_youtube_add() {
         done
 }
 
+ump_youtube_current() {
+    as_mpv_command get_property metadata \
+            | ump_youtube_tell_mpv \
+            | mpv_ipc_response_jq \
+                '"\(.ARTIST // .artist // ("" | halt_error(1))
+                    ) - \(.TITLE // .title)"' \
+        || mpv_command get_property media-title | sed 's/\.[^.]*$//'
+}
+
 ump_youtube() {
     MPV_SOCKET="${MPV_SOCKET:-$XDG_RUNTIME_DIR/ump_mpv_socket}"
     UMP_VIDEO_LIBRARY="$(video_lib_location)"
@@ -209,7 +225,7 @@ ump_youtube() {
     toggle) mpv_command cycle pause;;
     prev) shift; mpv_command playlist_prev;;
     next) shift; mpv_command playlist_next;;
-    current) mpv_command get_property media-title | sed 's/\.[^.]*$//';;
+    current) ump_youtube_current;;
     exec) shift; "$@";;
     rsync) shift; in_dir "$UMP_VIDEO_LIBRARY" rsync --progress -rh \
         --exclude '*/' --include '*.mp4' --include '*.mkv' --include '*.webm' \
