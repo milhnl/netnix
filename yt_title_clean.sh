@@ -43,6 +43,8 @@ s/1080p//;
 s/720p//;
 s/ \{0,1\}([12][0-9]\{3\})//;
 
+s/\[\([^]]*\) [Rr]emix\]/(\1 Remix)/
+
 #Preserve album/ep tag
 s/[Ff][Uu][Ll][Ll] [Ee][Pp]$/[EP]/;
 s/- \([Ff][Uu][Ll][Ll] \)\{0,1\}[Ee][Pp]$/[EP]/;
