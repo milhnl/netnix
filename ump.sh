@@ -78,9 +78,13 @@ mpv_command() {
 
 video_lib_location() {
     if [ -n "${UMP_VIDEO_LIBRARY:-}" ]; then
-        echo "${UMP_VIDEO_LIBRARY:-}"
-    elif exists xdg-user-dir; then
+        echo "$UMP_VIDEO_LIBRARY"
+    #Defaulting to HOME seems dirty
+    elif exists xdg-user-dir && [ "$(xdg-user-dir MUSIC)" != "$HOME" ]; then
         echo "$(xdg-user-dir MUSIC)"
+    #Probably safe if it's explicitly set
+    elif [ -n "${XDG_MUSIC_DIR:-}" ]; then
+        echo "$XDG_MUSIC_DIR"
     else
         echo "$XDG_DATA_HOME/ump/downloaded"
     fi
