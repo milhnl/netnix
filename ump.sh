@@ -155,15 +155,20 @@ ump_youtube_download() {
     done
 }
 
+ump_list_local_library() {
+    find "$UMP_VIDEO_LIBRARY" \
+            -name '*.mkv' \
+            -o -name '*.webm' \
+            -o -name '*.mp4' \
+            -o -name '*.aac' \
+            -o -name '*.flac' \
+            -o -name '*.mp3' \
+            -o -name '*.wav'
+}
+
 ump_youtube_find_by_name() {
-    set -- "*$(for x; do printf '%s' "$x" | sed 's/[][*]/\\&/g;s/$/*/'; done)"
-    case "$(find --help | grep -E 'iwholename|ipath|iname')" in
-    *iwholename*) set -- -iwholename "$1";;
-    *ipath*) set -- -ipath "$1";;
-    *iname*) set -- -iname "$1";;
-    *) set -- -name "$1";;
-    esac
-    find "$UMP_VIDEO_LIBRARY" -not -name '.*' -a "$@"
+    set -- ".*$(for x; do fixed_as_regex "$x"; echo '.*'; done | tr -d '\n')"
+    ump_list_local_library | grep -i "$1"
 }
 
 ump_youtube_cached() {
@@ -172,19 +177,12 @@ ump_youtube_cached() {
     "") return 1;;
     *.mkv|*.mp4|*.webm) echo "$1";;
     *.aac|*.flac|*.mp3|*.wav) echo "$1";;
-    *) return 1;;
+    *) die "ERROR: $1"; return 1;;
     esac
 }
 
 ump_youtube_ui() {
-    find "$UMP_VIDEO_LIBRARY" \
-            -name '*.mkv' \
-            -o -name '*.webm' \
-            -o -name '*.mp4' \
-            -o -name '*.aac' \
-            -o -name '*.flac' \
-            -o -name '*.mp3' \
-            -o -name '*.wav' \
+    ump_list_local_library \
         | sed "s/$(fixed_as_regex "$UMP_VIDEO_LIBRARY/")//;"'s/\.[a-z0-9]*$//'\
         | shuf \
         | fzy
