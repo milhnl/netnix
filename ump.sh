@@ -186,7 +186,7 @@ ump_list_local_library() {
 
 ump_youtube_find_by_name() {
     set -- ".*$(for x; do fixed_as_regex "$x"; echo '.*'; done | tr -d '\n')"
-    ump_list_local_library | grep -i "$1"
+    ump_list_local_library | grep -i "$1" | sort
 }
 
 ump_youtube_cached() {
