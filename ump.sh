@@ -160,6 +160,7 @@ ump_list_local_library() {
             -name '*.mkv' \
             -o -name '*.webm' \
             -o -name '*.mp4' \
+            -o -name '*.playlist' \
             -o -name '*.aac' \
             -o -name '*.flac' \
             -o -name '*.mp3' \
@@ -177,6 +178,10 @@ ump_youtube_cached() {
     "") return 1;;
     *.mkv|*.mp4|*.webm) echo "$1";;
     *.aac|*.flac|*.mp3|*.wav) echo "$1";;
+    *.playlist)
+        while read -r LINE; do
+            ump_youtube_cached "$LINE" || ump_youtube_download "$LINE" ||:
+        done <"$1";;
     *) die "ERROR: $1"; return 1;;
     esac
 }
@@ -202,7 +207,7 @@ ump_youtube_now() {
 
 ump_youtube_add() {
     [ "$#" -ne 0 ] || set -- "$(ump_youtube_ui)"; [ -n "$1" ] || return 1
-    { ump_youtube_cached "$@" || ump_youtube_download "$@"; } \
+    ( ump_youtube_cached "$@" || ump_youtube_download "$@"; ) \
         | while read -r LINE; do
             mpv_command loadfile "$LINE" append-play
         done
