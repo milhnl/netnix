@@ -166,7 +166,7 @@ ump_youtube_download() {
         --write-info-json --add-metadata \
         -o "$UMP_VIDEO_LIBRARY/.ytdl-tmp-$2-%(autonumber)s.%(ext)s" "$1" >&2
     for json in "$UMP_VIDEO_LIBRARY/.ytdl-tmp-$2"-*.info.json; do
-        video="$(ump_youtube_find_ext "${json%%.info.json}")"
+        video="$(ump_youtube_find_ext "${json%%.info.json}")" || return 1
         ump_youtube_move_file "$video" "$json"
     done
 }
