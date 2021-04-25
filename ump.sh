@@ -124,11 +124,6 @@ ump_organise_files() {
     for json in "$UMP_VIDEO_LIBRARY"/.*.info.json; do
         video="$(ump_youtube_find_ext "$(dirname "$json")/$(basename "$json" \
             | sed 's/^\.//;s/\.info\.json$//')")" || { rm "$json"; continue; }
-        printf "%s\t%s\n" \
-            "$(<"$json" jq -r .webpage_url \
-                | sed '/https:[^ ]*$/s_www.youtube.com/watch?v=_youtu.be/_')" \
-            "$(ump_youtube_video_name "$json")" \
-        >>"$UMP_VIDEO_LIBRARY/.ytdl-library"
         ump_youtube_move_file "$video" "$json"
     done
     for trash in "$UMP_VIDEO_LIBRARY"/.ytdl-tmp-*; do
@@ -138,17 +133,33 @@ ump_organise_files() {
     cat "$UMP_VIDEO_LIBRARY"/.*.json \
         | jq -r '(.extractor + " " + .id)' \
         >"$UMP_VIDEO_LIBRARY/.ytdl-archive"
+    ump_update_library
 }
 
 ump_update_library() {
     echo '{ "version": 0, "items": [' >"$UMP_VIDEO_LIBRARY/.ytdl-library"
-    #oof
-    ump_list_local_library -exec sh -c '
-        echo "{\"path\":\"$(echo "$1" \
-            | sed '\''s/'"$(fixed_as_regex \
-                "$UMP_VIDEO_LIBRARY")"'\///;s/"/\\\"/g'\'')\"},"
-    ' -- {} \; | sed '$s/,$//' >>"$UMP_VIDEO_LIBRARY/.ytdl-library" #"'
+    find "$UMP_VIDEO_LIBRARY" \( \
+            -name '*.mkv' \
+            -o -name '*.webm' \
+            -o -name '*.mp4' \
+            -o -name '*.playlist' \
+            -o -name '*.aac' \
+            -o -name '*.flac' \
+            -o -name '*.mp3' \
+            -o -name '*.wav' \
+        \) -exec sh -c '
+            echo "{\"path\":\"$(echo "$1" \
+                | sed '\''s/'"$(fixed_as_regex \
+                    "$UMP_VIDEO_LIBRARY")"'\///;s/"/\\\"/g'\'')\"},"
+        ' -- {} \; | sed '$s/,$//' >>"$UMP_VIDEO_LIBRARY/.ytdl-library" #"'
     echo '] }' >>"$UMP_VIDEO_LIBRARY/.ytdl-library"
+}
+
+ump_library_jq() {
+    <"$UMP_VIDEO_LIBRARY/.ytdl-library" \
+        jq -r ".items
+            | map(. + { url: (\"$UMP_VIDEO_LIBRARY/\" + .path) })
+            ${1+| $1}"
 }
 
 hash() {
@@ -171,22 +182,9 @@ ump_youtube_download() {
     done
 }
 
-ump_list_local_library() {
-    find "$UMP_VIDEO_LIBRARY" \( \
-            -name '*.mkv' \
-            -o -name '*.webm' \
-            -o -name '*.mp4' \
-            -o -name '*.playlist' \
-            -o -name '*.aac' \
-            -o -name '*.flac' \
-            -o -name '*.mp3' \
-            -o -name '*.wav' \
-            \) "$@"
-}
-
 ump_youtube_find_by_name() {
     set -- ".*$(for x; do fixed_as_regex "$x"; echo '.*'; done | tr -d '\n')"
-    ump_list_local_library | grep -i "$1" | sort
+    ump_library_jq '.[].url' | grep -i "$1" | sort
 }
 
 ump_youtube_cached() {
@@ -204,8 +202,8 @@ ump_youtube_cached() {
 }
 
 ump_youtube_ui() {
-    ump_list_local_library \
-        | sed "s/$(fixed_as_regex "$UMP_VIDEO_LIBRARY/")//;"'s/\.[a-z0-9]*$//'\
+    ump_library_jq '.[].path' \
+        | sed 's/\.[a-z0-9]*$//' \
         | shuf \
         | fzy
 }
