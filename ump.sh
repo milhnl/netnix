@@ -155,11 +155,22 @@ ump_update_library() {
     echo '] }' >>"$UMP_VIDEO_LIBRARY/.ytdl-library"
 }
 
+ump_include_library() { #1 root
+    curl -s "${1%%/.ytdl-library}/.ytdl-library" \
+        | jq '.root = "'"${1%%/.ytdl-library}/"'"'
+}
+
 ump_library_jq() {
-    <"$UMP_VIDEO_LIBRARY/.ytdl-library" \
-        jq -r ".items
-            | map(. + { url: (\"$UMP_VIDEO_LIBRARY/\" + .path) })
-            ${1+| $1}"
+    { for x in $UMP_LIBRARIES; do ump_include_library "$x"; done; } \
+        | jq -rs '
+            map(
+                .root as $root
+                    | .items = (.items | map(. + { url: ($root + .path)}))
+            )
+                | reduce .[].items as $x ([]; . + $x)
+                | unique_by(.path)
+                '"${1+| $1}"'
+        '
 }
 
 hash() {
