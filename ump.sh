@@ -62,7 +62,7 @@ as_mpv_command() {
 }
 
 mpv_ipc_response_jq() {
-    jq -esr '
+    jq -sr '
         if . == [] then
             "Error: could not connect to socket.\n" | halt_error
         elif .[0].error != "success" then
@@ -73,7 +73,8 @@ mpv_ipc_response_jq() {
 }
 
 mpv_command() {
-    as_mpv_command "$@" | ump_youtube_tell_mpv | mpv_ipc_response_jq
+    as_mpv_command "$@" | ump_youtube_tell_mpv \
+        | mpv_ipc_response_jq 'if . == null then empty else . end'
 }
 
 video_lib_location() {
