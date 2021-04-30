@@ -4,10 +4,6 @@
     <title>Netnix</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <script src="https://unpkg.com/react@16.4.1/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@16.4.1/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/polyfill@7.6.0/dist/polyfill.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <style>
       @media (prefers-color-scheme: dark) {
         body {
@@ -113,113 +109,94 @@
   </head>
   <body>
     <div id="root"></div>
+    <script type="module">
+      import { h, render, Fragment } from 'https://cdn.pika.dev/preact';
+      import { useState, useEffect } from 'https://cdn.pika.dev/preact/hooks';
+      import htm from 'https://cdn.pika.dev/htm';
+      const html = htm.bind(h);
 
-    <script type="text/babel">
-      class Directory extends React.Component {
-        constructor(props) {
-          super(props);
-          this.state = { imageUrl: null, url: null };
-        }
-        replaceImage() {
-          this.setState({ imageUrl: null });
-          ["folder.jpg", "folder.png", "default.png"]
-            .map(x => this.props.url + "/" + x)
-           .forEach(url => {
-              fetch(url)
-                .then(x => x.status === 200 ? x.blob() : Promise.reject())
-                .then(x => this.setState({ imageUrl: url }))
-                .catch(e => {});
-            });
-        }
-        componentDidMount() {
-          this.replaceImage()
-        }
-        componentDidUpdate(prevProps) {
-          if (this.props.url !== prevProps.url) {
-            this.replaceImage()
-          }
-        }
-        render() {
-          return (
-            <div class="dir" onClick={() => this.props.load(this.props.url)}>
-              <img
-                ref={img => (this.img = img)}
-                src={this.state.imageUrl}
-                alt={this.props.name}
-              />
-            </div>
-          );
-        }
-      }
+      const isIOS =
+        /iPad|iPhone|iPod/.test(navigator.platform) ||
+        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      const asVLC = (url) =>
+        `vlc-x-callback://x-callback-url/stream?url=${encodeURIComponent(
+          window.location.href.split('/').slice(0, 3).join('/') +
+            encodeURI(url)
+        )}`;
 
-      class File extends React.Component {
-        render = () => (
-          <React.Fragment>
-            <a href={this.props.url}>{this.props.name}</a>
-            <br />
-          </React.Fragment>
-        );
-      }
+      const File = ({ name, url }) => html`
+        <${Fragment}>
+          <a href=${isIOS && url.match(/\.(mkv|webm|mp4)$/) ? asVLC(url) : url}
+            >${name}</a
+          >
+          <br />
+        <//>
+      `;
 
-      class App extends React.Component {
-        constructor(props) {
-          super(props);
-          this.state = this.props.initialState;
-        }
+      const Directory = ({ name, url }) => html`
+        <div class="dir" onClick=${() => (location.hash = url)}>
+          <img alt=${name} src=${url + '/folder.jpg'} />
+        </div>
+      `;
 
-        load = url =>
-          url == ""
-            ? this.setState(this.props.initialState)
-            : fetch(url + "/")
-                .then(x => x.json())
-                .then(x =>
-                  this.setState({
-                    pwd: url,
-                    content: x.map(y => ({ ...y, url: url + "/" + y.name }))
+      const rootState = {
+        pwd: '',
+        nodes: [
+          { name: 'Series', url: '/Series', type: 'directory' },
+          { name: 'Films', url: '/Films', type: 'directory' },
+          { name: 'Music', url: '/Music', type: 'directory' },
+        ],
+      };
+
+      const App = (props) => {
+        const [model, setModel] = useState(rootState);
+        const load = (pwd) =>
+          pwd == ''
+            ? setModel(rootState)
+            : fetch(pwd + '/')
+                .then((x) => x.json())
+                .then((x) =>
+                  setModel({
+                    pwd,
+                    nodes: x.map((node) => ({
+                      ...node,
+                      url: pwd + '/' + node.name,
+                    })),
                   })
                 );
+        useEffect(() => load(location.hash.slice(1)), []);
+        useEffect(() => {
+          const listener = (ev) => load(new URL(ev.newURL).hash.slice(1));
+          window.addEventListener('hashchange', listener, false);
+          return () => window.removeEventListener('hashchange', listener);
+        }, []);
+        return html`
+          <${Fragment}>
+            <header>
+              <button
+                id="back"
+                onClick=${() =>
+                  (location.hash = model.pwd.replace(/\/[^\/]*$/, ''))}
+              >
+                «
+              </button>
+              <span>${decodeURI(model.pwd.replace(/^[^\/]*\//, ''))}</span>
+            </header>
+            ${model.nodes
+              .filter((x) => x.name != '..' && x.name != 'folder.jpg')
+              .map(
+                (x) => html`
+                  <${x.type === 'directory' ? Directory : File}
+                    key=${x.url}
+                    ...${x}
+                  />
+                `
+              )}
+          <//>
+        `;
+      };
 
-        render() {
-          return (
-            <React.Fragment>
-              <header>
-                <button
-                  id="back"
-                  onClick={() =>
-                    this.load(this.state.pwd.replace(/\/[^\/]*$/, ""))
-                  }
-                >
-                  &laquo;
-                </button>
-                <span>{this.state.pwd.replace(/^[^\/]*\//, "")}</span>
-              </header>
-              {this.state.content
-                .filter(x => x.name !== ".." && x.name !== "folder.jpg")
-                .map(x =>
-                  x.type === "directory" ? (
-                    <Directory name={x.name} url={x.url} load={this.load} />
-                  ) : (
-                    <File name={x.name} url={x.url} load={this.load} />
-                  )
-                )}
-            </React.Fragment>
-          );
-        }
-      }
-
-      ReactDOM.render(
-        <App
-          initialState={{
-            pwd: "/",
-            content: [
-              { name: "Series", url: "/Series", type: "directory" },
-              { name: "Films", url: "/Films", type: "directory" },
-              { name: "Music", url: "/Music", type: "directory" }
-            ]
-          }}
-        />,
-        document.getElementById("root")
-      );
+      render(html`<${App} />`, document.body);
     </script>
   </body>
 </html>
