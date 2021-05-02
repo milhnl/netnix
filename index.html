@@ -117,19 +117,24 @@
       import htm from 'https://cdn.pika.dev/htm';
       const html = htm.bind(h);
 
+      const isAndroid = /(android)/i.test(navigator.userAgent);
       const isIOS =
         /iPad|iPhone|iPod/.test(navigator.platform) ||
         (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-      const asVLC = (path) =>
-        `vlc-x-callback://x-callback-url/stream?url=${encodeURIComponent(
-            location.href.split('/').slice(0, 3).join('/') + path
-        )}`
+      const asPlayableLink = (path) =>
+        isAndroid
+          ? 'vlc://' + location.href.split('/').slice(0, 3).join('/') + path
+          : isIOS
+          ? `vlc-x-callback://x-callback-url/stream?url=${encodeURIComponent(
+              location.href.split('/').slice(0, 3).join('/') + path
+            )}`
+          : location.href.split('/').slice(0, 3).join('/') + path;
 
       const File = ({ name, path }) => html`
         <${Fragment}>
           <a
-            href=${isIOS && path.match(/\.(mkv|webm|mp4)$/)
-              ? asVLC(path)
+            href=${path.match(/\.(mkv|webm|mp4)$/)
+              ? asPlayableLink(path)
               : path}
             >${name}</a
           >
