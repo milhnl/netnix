@@ -124,20 +124,26 @@
         /iPad|iPhone|iPod/.test(navigator.platform) ||
         (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
       const isMobile = isIOS || isAndroid;
-      const asPlayableLink = (path) =>
+
+      const encodeURIAll = (x) =>
+        encodeURIComponent(x).replace(/[!'()*]/g, escape);
+      const asURL = (path) =>
+        location.href.split('/').slice(0, 3).join('/') + path;
+
+      const asPlayableURL = (path) =>
         isAndroid
-          ? 'vlc://' + location.href.split('/').slice(0, 3).join('/') + path
+          ? 'vlc://' + asURL(path)
           : isIOS
-          ? `vlc-x-callback://x-callback-url/stream?url=${encodeURIComponent(
-              location.href.split('/').slice(0, 3).join('/') + path
+          ? `vlc-x-callback://x-callback-url/stream?url=${encodeURIAll(
+              asURL(path)
             )}`
-          : location.href.split('/').slice(0, 3).join('/') + path;
+          : asURL(path);
 
       const File = ({ name, path }) => html`
         <${Fragment}>
           <a
             href=${path.match(/\.(mkv|webm|mp4)$/)
-              ? asPlayableLink(path)
+              ? asPlayableURL(path)
               : path}
             >${isMobile ? name.replace(/\.[a-z0-9]+$/, '') : name}</a
           >
@@ -172,7 +178,7 @@
                     pwd,
                     nodes: x.map((node) => ({
                       ...node,
-                      path: pwd + '/' + encodeURIComponent(node.name),
+                      path: pwd + '/' + encodeURIAll(node.name),
                     })),
                   })
                 );
