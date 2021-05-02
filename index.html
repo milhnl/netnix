@@ -12,9 +12,6 @@
           --button-color: #444;
           --header-color: #333;
         }
-        a {
-          color: lightblue;
-        }
       }
       @media (prefers-color-scheme: light) {
         body {
@@ -95,19 +92,41 @@
         text-align: center;
         line-height: var(--header-height);
       }
-      img:not([src]) {
-        display: none;
+      div#directories {
+        display: flex;
+        flex-wrap: wrap;
       }
-      img {
-        object-fit: cover;
-        height: inherit;
-        width: inherit;
-      }
-      div.dir {
+      div#directories > * {
         cursor: pointer;
-        float: left;
         width: var(--item-size);
         height: var(--item-size);
+        background-size: cover;
+        background-position: center;
+        display: grid;
+        align-items: end;
+        justify-items: stretch;
+      }
+      div#directories > * > span {
+        background-color: rgba(0, 0, 0, 0.75);
+        text-align: center;
+      }
+      @media (prefers-color-scheme: light) {
+        div#directories > * > span {
+          color: white;
+        }
+      }
+      div#files {
+        display: flex;
+        flex-direction: column;
+      }
+      div#files > *:nth-child(odd) {
+        background-color: rgba(128, 128, 128, 0.1);
+      }
+      a {
+        font-size: 1.2rem;
+        line-height: 1.3;
+        color: inherit;
+        text-decoration: none;
       }
     </style>
   </head>
@@ -140,21 +159,21 @@
           : asURL(path);
 
       const File = ({ name, path }) => html`
-        <${Fragment}>
-          <a
-            href=${path.match(/\.(mkv|webm|mp4)$/)
-              ? asPlayableURL(path)
-              : path}
-            >${isMobile ? name.replace(/\.[a-z0-9]+$/, '') : name}</a
-          >
-          <br />
-        <//>
+        <a
+          href=${path.match(/\.(mkv|webm|mp4|m4v)$/)
+            ? asPlayableURL(path)
+            : path}
+          >${isMobile ? name.replace(/\.[a-z0-9]+$/, '') : name}</a
+        >
       `;
 
       const Directory = ({ name, path }) => html`
-        <div class="dir" onClick=${() => (location.hash = path)}>
-          <img alt=${name} src=${path + '/folder.jpg'} />
-        </div>
+        <a
+          style=${{ backgroundImage: `url(${path}/folder.jpg)` }}
+          href=${'#' + path}
+        >
+          <span>${name}</span>
+        </a>
       `;
 
       const rootState = {
@@ -188,6 +207,11 @@
           window.addEventListener('hashchange', listener, false);
           return () => window.removeEventListener('hashchange', listener);
         }, []);
+        const nodes = model.nodes
+          .filter((x) => x.name != '..' && x.name != 'folder.jpg')
+          .filter((x) => !isMobile || !x.name.match(/.srt$/));
+        const directories = nodes.filter((x) => x.type === 'directory');
+        const files = nodes.filter((x) => x.type === 'file');
         return html`
           <${Fragment}>
             <header>
@@ -206,17 +230,20 @@
                   `
                 : html`<span>Netnix</span>`}
             </header>
-            ${model.nodes
-              .filter((x) => x.name != '..' && x.name != 'folder.jpg')
-              .filter((x) => !isMobile || !x.name.match(/.srt$/))
-              .map(
-                (x) => html`
-                  <${x.type === 'directory' ? Directory : File}
-                    key=${x.path}
-                    ...${x}
-                  />
-                `
-              )}
+            ${directories.length != 0 &&
+            html`
+              <div id="directories">
+                ${directories.map(
+                  (x) => html` <${Directory} key=${x.path} ...${x} /> `
+                )}
+              </div>
+            `}
+            ${files.length != 0 &&
+            html`
+              <div id="files">
+                ${files.map((x) => html` <${File} key=${x.path} ...${x} /> `)}
+              </div>
+            `}
           <//>
         `;
       };
