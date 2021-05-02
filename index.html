@@ -121,6 +121,7 @@
       const isIOS =
         /iPad|iPhone|iPod/.test(navigator.platform) ||
         (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      const isMobile = isIOS || isAndroid;
       const asPlayableLink = (path) =>
         isAndroid
           ? 'vlc://' + location.href.split('/').slice(0, 3).join('/') + path
@@ -136,7 +137,7 @@
             href=${path.match(/\.(mkv|webm|mp4)$/)
               ? asPlayableLink(path)
               : path}
-            >${name}</a
+            >${isMobile ? name.replace(/\.[a-z0-9]+$/, '') : name}</a
           >
           <br />
         <//>
@@ -193,6 +194,7 @@
             </header>
             ${model.nodes
               .filter((x) => x.name != '..' && x.name != 'folder.jpg')
+              .filter((x) => !isMobile || !x.name.match(/.srt$/))
               .map(
                 (x) => html`
                   <${x.type === 'directory' ? Directory : File}
