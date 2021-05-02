@@ -73,19 +73,17 @@
         font-size: calc(var(--header-height) * 0.5);
         padding: 0 var(--header-height);
       }
-      header button {
+      header a {
         position: absolute;
         left: 0;
         display: block;
         flex: 0 var(--header-height);
-        border: 0;
-        -webkit-appearance: none;
-        -moz-appearance: none;
+        line-height: var(--header-height);
         height: var(--header-height);
         width: var(--header-height);
-        padding: 0vmin 1vmin 0vmin;
         background-color: var(--button-color);
         font-size: calc(var(--header-height) * 0.7);
+        text-align: center;
       }
       header span {
         flex: 1;
@@ -217,13 +215,7 @@
             <header>
               ${model.pwd != ''
                 ? html`
-                    <button
-                      id="back"
-                      onClick=${() =>
-                        (location.hash = model.pwd.replace(/\/[^\/]*$/, ''))}
-                    >
-                      «
-                    </button>
+                    <a href=${'#' + model.pwd.replace(/\/[^\/]*$/, '')}>«</a>
                     <span
                       >${decodeURI(model.pwd.replace(/^[^\/]*\//, ''))}</span
                     >
