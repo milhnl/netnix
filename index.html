@@ -74,9 +74,11 @@
         vertical-align: middle;
         background-color: var(--header-color);
         font-size: calc(var(--header-height) * 0.5);
-        padding-right: var(--header-height);
+        padding: 0 var(--header-height);
       }
       header button {
+        position: absolute;
+        left: 0;
         display: block;
         flex: 0 var(--header-height);
         border: 0;
@@ -183,14 +185,20 @@
         return html`
           <${Fragment}>
             <header>
-              <button
-                id="back"
-                onClick=${() =>
-                  (location.hash = model.pwd.replace(/\/[^\/]*$/, ''))}
-              >
-                «
-              </button>
-              <span>${decodeURI(model.pwd.replace(/^[^\/]*\//, ''))}</span>
+              ${model.pwd != ''
+                ? html`
+                    <button
+                      id="back"
+                      onClick=${() =>
+                        (location.hash = model.pwd.replace(/\/[^\/]*$/, ''))}
+                    >
+                      «
+                    </button>
+                    <span
+                      >${decodeURI(model.pwd.replace(/^[^\/]*\//, ''))}</span
+                    >
+                  `
+                : html`<span>Netnix</span>`}
             </header>
             ${model.nodes
               .filter((x) => x.name != '..' && x.name != 'folder.jpg')
