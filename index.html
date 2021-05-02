@@ -120,33 +120,35 @@
       const isIOS =
         /iPad|iPhone|iPod/.test(navigator.platform) ||
         (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-      const asVLC = (url) =>
+      const asVLC = (path) =>
         `vlc-x-callback://x-callback-url/stream?url=${encodeURIComponent(
-          window.location.href.split('/').slice(0, 3).join('/') +
-            encodeURI(url)
-        )}`;
+            location.href.split('/').slice(0, 3).join('/') + path
+        )}`
 
-      const File = ({ name, url }) => html`
+      const File = ({ name, path }) => html`
         <${Fragment}>
-          <a href=${isIOS && url.match(/\.(mkv|webm|mp4)$/) ? asVLC(url) : url}
+          <a
+            href=${isIOS && path.match(/\.(mkv|webm|mp4)$/)
+              ? asVLC(path)
+              : path}
             >${name}</a
           >
           <br />
         <//>
       `;
 
-      const Directory = ({ name, url }) => html`
-        <div class="dir" onClick=${() => (location.hash = url)}>
-          <img alt=${name} src=${url + '/folder.jpg'} />
+      const Directory = ({ name, path }) => html`
+        <div class="dir" onClick=${() => (location.hash = path)}>
+          <img alt=${name} src=${path + '/folder.jpg'} />
         </div>
       `;
 
       const rootState = {
         pwd: '',
         nodes: [
-          { name: 'Series', url: '/Series', type: 'directory' },
-          { name: 'Films', url: '/Films', type: 'directory' },
-          { name: 'Music', url: '/Music', type: 'directory' },
+          { name: 'Series', path: '/Series', type: 'directory' },
+          { name: 'Films', path: '/Films', type: 'directory' },
+          { name: 'Music', path: '/Music', type: 'directory' },
         ],
       };
 
@@ -162,7 +164,7 @@
                     pwd,
                     nodes: x.map((node) => ({
                       ...node,
-                      url: pwd + '/' + node.name,
+                      path: pwd + '/' + encodeURIComponent(node.name),
                     })),
                   })
                 );
@@ -189,7 +191,7 @@
               .map(
                 (x) => html`
                   <${x.type === 'directory' ? Directory : File}
-                    key=${x.url}
+                    key=${x.path}
                     ...${x}
                   />
                 `
