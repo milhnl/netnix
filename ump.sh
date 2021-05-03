@@ -165,8 +165,12 @@ ump_library_jq() {
     { for x in $UMP_LIBRARIES; do ump_include_library "$x"; done; } \
         | jq -rs '
             map(
-                .root as $root
-                    | .items = (.items | map(. + { url: ($root + (.path | @uri))}))
+                .root as $root | .items |=
+                    (if ($root | test("^file:")) then
+                        map(. + { url: ($root[5:] + .path)})
+                    else
+                        map(. + { url: ($root + (.path | @uri))})
+                    end)
             )
                 | reduce .[].items as $x ([]; . + $x)
                 | unique_by(.path)
