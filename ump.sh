@@ -199,7 +199,9 @@ ump_youtube_download() {
 }
 
 ump_youtube_find_by_name() {
-    set -- ".*$(for x; do fixed_as_regex "$x"; echo '.*'; done | tr -d '\n')"
+    set -- ".*$(for x; do
+            echo "$x" | sed 's/[][{}()\\.$^*+?]/\\\\&/g;s/"/\\"/g'; echo '.*';
+        done | tr -d '\n')"
     ump_library_jq '.[] | select(.path | test("'"$1"'"; "i")) | .url' | sort
 }
 
