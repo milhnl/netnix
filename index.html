@@ -91,6 +91,7 @@
         cursor: pointer;
         width: var(--item-size);
         height: var(--item-size);
+        background-color: rgba(128, 128, 128, 0.1);
         background-size: cover;
         background-position: center;
         display: grid;
@@ -98,6 +99,7 @@
         justify-items: stretch;
       }
       div#directories > * > span {
+        padding: 0.2em 0.5em;
         background-color: rgba(0, 0, 0, 0.75);
         text-align: center;
       }
@@ -110,7 +112,10 @@
         display: flex;
         flex-direction: column;
       }
-      div#files > *:nth-child(odd) {
+      div#files > * {
+        padding: 0.5em 1em;
+      }
+      div#files > *:nth-child(even) {
         background-color: rgba(128, 128, 128, 0.1);
       }
       a {
