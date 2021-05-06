@@ -77,20 +77,6 @@ mpv_command() {
         | mpv_ipc_response_jq 'if . == null then empty else . end'
 }
 
-video_lib_location() {
-    if [ -n "${UMP_VIDEO_LIBRARY:-}" ]; then
-        echo "$UMP_VIDEO_LIBRARY"
-    #Defaulting to HOME seems dirty
-    elif exists xdg-user-dir && [ "$(xdg-user-dir MUSIC)" != "$HOME" ]; then
-        echo "$(xdg-user-dir MUSIC)"
-    #Probably safe if it's explicitly set
-    elif [ -n "${XDG_MUSIC_DIR:-}" ]; then
-        echo "$XDG_MUSIC_DIR"
-    else
-        echo "$XDG_DATA_HOME/ump/downloaded"
-    fi
-}
-
 ump_youtube_find_ext() {
     if [ -e "$1.mkv" ]; then
         echo "$1.mkv"
@@ -115,31 +101,31 @@ ump_youtube_move_file() { #1:file 2:json
     set -- "$1" "$2" \
         "$(ump_youtube_video_name "$2" | sed 's_ \{0,1\}/ \{0,1\}_ - _g')"
     set -- "$1" "$2" \
-        "$UMP_VIDEO_LIBRARY/$3.${1##*.}" "$UMP_VIDEO_LIBRARY/.$3.info.json"
+        "$UMP_DOWNLOADS/$3.${1##*.}" "$UMP_DOWNLOADS/.$3.info.json"
     [ "$1" = "$3" ] || mv "$1" "$3" >&2
     [ "$2" = "$4" ] || mv "$2" "$4" >&2
     echo "$3"
 }
 
 ump_organise_files() {
-    for json in "$UMP_VIDEO_LIBRARY"/.*.info.json; do
+    for json in "$UMP_DOWNLOADS"/.*.info.json; do
         video="$(ump_youtube_find_ext "$(dirname "$json")/$(basename "$json" \
             | sed 's/^\.//;s/\.info\.json$//')")" || { rm "$json"; continue; }
         ump_youtube_move_file "$video" "$json"
     done
-    for trash in "$UMP_VIDEO_LIBRARY"/.ytdl-tmp-*; do
-        [ "$trash" != "$UMP_VIDEO_LIBRARY/.ytdl-tmp-*" ] || continue
+    for trash in "$UMP_DOWNLOADS"/.ytdl-tmp-*; do
+        [ "$trash" != "$UMP_DOWNLOADS/.ytdl-tmp-*" ] || continue
         rm "$trash"
     done
-    cat "$UMP_VIDEO_LIBRARY"/.*.json \
+    cat "$UMP_DOWNLOADS"/.*.json \
         | jq -r '(.extractor + " " + .id)' \
-        >"$UMP_VIDEO_LIBRARY/.ytdl-archive"
+        >"$UMP_DOWNLOADS/.ytdl-archive"
     ump_update_library
 }
 
 ump_update_library() {
-    echo '{ "version": 0, "items": [' >"$UMP_VIDEO_LIBRARY/.ytdl-library"
-    find "$UMP_VIDEO_LIBRARY" \( \
+    echo '{ "version": 0, "items": [' >"${1-$UMP_DOWNLOADS}/.ytdl-library"
+    find "${1-$UMP_DOWNLOADS}" \( \
             -name '*.mkv' \
             -o -name '*.webm' \
             -o -name '*.mp4' \
@@ -151,9 +137,9 @@ ump_update_library() {
         \) -exec sh -c '
             echo "{\"path\":\"$(echo "$1" \
                 | sed '\''s/'"$(fixed_as_regex \
-                    "$UMP_VIDEO_LIBRARY")"'\///;s/"/\\\"/g'\'')\"},"
-        ' -- {} \; | sed '$s/,$//' >>"$UMP_VIDEO_LIBRARY/.ytdl-library" #"'
-    echo '] }' >>"$UMP_VIDEO_LIBRARY/.ytdl-library"
+                    "${1-$UMP_DOWNLOADS}")"'\///;s/"/\\\"/g'\'')\"},"
+        ' -- {} \; | sed '$s/,$//' >>"${1-$UMP_DOWNLOADS}/.ytdl-library" #"'
+    echo '] }' >>"${1-$UMP_DOWNLOADS}/.ytdl-library"
 }
 
 ump_include_library() { #1 root
@@ -187,12 +173,12 @@ hash() {
 
 ump_youtube_download() {
     set -- "$*" "$(hash "$*")"
-    mkdir -p "$UMP_VIDEO_LIBRARY"
+    mkdir -p "$UMP_DOWNLOADS"
     youtube-dl --default-search ytsearch \
-        --download-archive "$UMP_VIDEO_LIBRARY/.ytdl-archive" \
+        --download-archive "$UMP_DOWNLOADS/.ytdl-archive" \
         --write-info-json --add-metadata \
-        -o "$UMP_VIDEO_LIBRARY/.ytdl-tmp-$2-%(autonumber)s.%(ext)s" "$1" >&2
-    for json in "$UMP_VIDEO_LIBRARY/.ytdl-tmp-$2"-*.info.json; do
+        -o "$UMP_DOWNLOADS/.ytdl-tmp-$2-%(autonumber)s.%(ext)s" "$1" >&2
+    for json in "$UMP_DOWNLOADS/.ytdl-tmp-$2"-*.info.json; do
         video="$(ump_youtube_find_ext "${json%%.info.json}")" || return 1
         ump_youtube_move_file "$video" "$json"
     done
@@ -257,7 +243,7 @@ ump_youtube_current() {
 
 ump_youtube() {
     MPV_SOCKET="${MPV_SOCKET:-$XDG_RUNTIME_DIR/ump_mpv_socket}"
-    UMP_VIDEO_LIBRARY="$(video_lib_location)"
+    UMP_DOWNLOADS="${UMP_DOWNLOADS-${XDG_DATA_HOME-$HOME/.cache}/ump/ytdl-lib}"
     mpv_ensure_running
     case "$1" in
     now) shift; ump_youtube_now "$@";;
@@ -267,7 +253,7 @@ ump_youtube() {
     next) shift; mpv_command playlist_next;;
     current) ump_youtube_current;;
     exec) shift; "$@";;
-    rsync) shift; in_dir "$UMP_VIDEO_LIBRARY" rsync --progress -rh \
+    rsync) shift; in_dir "$UMP_DOWNLOADS" rsync --progress -rh \
         --exclude '*/' --include '*.mp4' --include '*.mkv' --include '*.webm' \
         --include '.*.info.json' "$@";;
     *) die 'Error: unsupported operation';;
