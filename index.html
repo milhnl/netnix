@@ -175,8 +175,7 @@
 
       const encodeURIAll = (x) =>
         encodeURIComponent(x).replace(/[!'()*]/g, escape);
-      const asURL = (path) =>
-        location.href.split('/').slice(0, 3).join('/') + path;
+      const asURL = (path) => location.href.replace(/\/[^\/]*$/, '/') + path;
 
       const playerAppURL = isIOS
         ? 'https://apps.apple.com/us/app/vlc-for-mobile/id650377962'
