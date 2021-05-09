@@ -4,13 +4,14 @@
     <title>Netnix</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
     <style>
       @media (prefers-color-scheme: dark) {
         :root {
           background: #111;
           color: white;
-          --button-color: #444;
-          --header-color: #333;
+          --header-color: black;
         }
         a {
           color: lightblue;
@@ -20,8 +21,7 @@
         :root {
           background: white;
           color: #555;
-          --button-color: #ddd;
-          --header-color: #eee;
+          --header-color: white;
         }
       }
       @media (min-width: 1000px) {
@@ -54,6 +54,26 @@
           --header-height: 15vw;
         }
       }
+      @supports (-webkit-touch-callout: none) {
+        body {
+          display: grid;
+          position: fixed;
+          width: 100vw;
+          height: 100vh;
+          height: -webkit-fill-available;
+          grid-template-areas: 'header' 'main';
+          grid-template-rows: auto 1fr;
+        }
+        header {
+          grid-area: 'header';
+        }
+        main {
+          grid-area: 'main';
+          overflow-y: scroll;
+          overflow-x: hidden;
+          width: 100vw;
+        }
+      }
       body {
         width: 100vw;
         margin: 0;
@@ -77,7 +97,6 @@
         line-height: var(--header-height);
         height: var(--header-height);
         width: var(--header-height);
-        background-color: var(--button-color);
         font-size: calc(var(--header-height) * 0.7);
         text-align: center;
       }
@@ -259,29 +278,33 @@
                   `
                 : html`<span>Netnix</span>`}
             </header>
-            ${directories.length != 0 &&
-            html`
-              <div id="directories">
-                ${directories.map(
-                  (x) => html` <${Directory} key=${x.path} ...${x} /> `
-                )}
-              </div>
-            `}
-            ${files.length != 0 &&
-            html`
-              <div id="files">
-                ${files.map((x) => html` <${File} key=${x.path} ...${x} /> `)}
-              </div>
-            `}
-            ${model.pwd === '' &&
-            isMobile &&
-            html`
-              <p>
-                You will need VLC player installed on your phone to actually
-                play the video files on this server. You can download it at
-                your <a href=${playerAppURL}>App store</a>.
-              </p>
-            `}
+            <main>
+              ${directories.length != 0 &&
+              html`
+                <div id="directories">
+                  ${directories.map(
+                    (x) => html`<${Directory} key=${x.path} ...${x} />`
+                  )}
+                </div>
+              `}
+              ${files.length != 0 &&
+              html`
+                <div id="files">
+                  ${files.map(
+                    (x) => html`<${File} key=${x.path} ...${x} />`
+                  )}
+                </div>
+              `}
+              ${model.pwd === '' &&
+              isMobile &&
+              html`
+                <p>
+                  You will need VLC player installed on your phone to actually
+                  play the video files on this server. You can download it at
+                  your <a href=${playerAppURL}>App store</a>.
+                </p>
+              `}
+            </main>
           <//>
         `;
       };
