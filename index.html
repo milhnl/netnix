@@ -252,7 +252,9 @@
                       </svg>
                     </a>
                     <span
-                      >${decodeURI(model.pwd.replace(/^[^\/]*\//, ''))}</span
+                      >${decodeURIComponent(
+                        model.pwd.replace(/^[^\/]*\//, '')
+                      )}</span
                     >
                   `
                 : html`<span>Netnix</span>`}
