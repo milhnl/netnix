@@ -81,6 +81,11 @@
         font-size: calc(var(--header-height) * 0.7);
         text-align: center;
       }
+      header svg {
+        display: inline-block;
+        vertical-align: middle;
+        height: 75%;
+      }
       header span {
         flex: 1;
         text-align: center;
@@ -233,8 +238,19 @@
                     <a
                       className="nodefault"
                       href=${'#' + model.pwd.replace(/\/[^\/]*$/, '')}
-                      >«</a
                     >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 5 10"
+                      >
+                        <polyline
+                          points="4,2 1,5 4,8"
+                          stroke="blue"
+                          stroke-linecap="round"
+                          fill="none"
+                        />
+                      </svg>
+                    </a>
                     <span
                       >${decodeURI(model.pwd.replace(/^[^\/]*\//, ''))}</span
                     >
