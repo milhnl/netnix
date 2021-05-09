@@ -3,11 +3,14 @@
 .PHONY: install uninstall
 
 install: ump.sh yt_title_clean.sh
-	cp ump.sh "${DESTDIR}${PREFIX}/bin/ump"
+	awk '/^\. / { f=$$2; while (getline < f) print; next; } { print; }' \
+		<ump.sh >"${DESTDIR}${PREFIX}/bin/ump"
 	chmod 755 "${DESTDIR}${PREFIX}/bin/ump"
-	cp yt_title_clean.sh "${DESTDIR}${PREFIX}/bin/yt_title_clean"
+	awk '/^\. / { f=$$2; while (getline < f) print; next; } { print; }' \
+		<yt_title_clean.sh >"${DESTDIR}${PREFIX}/bin/yt_title_clean"
 	chmod 755 "${DESTDIR}${PREFIX}/bin/yt_title_clean"
-	cp tv.sh "${DESTDIR}${PREFIX}/bin/tv"
+	awk '/^\. / { f=$$2; while (getline < f) print; next; } { print; }' \
+		<tv.sh >"${DESTDIR}${PREFIX}/bin/tv"
 	chmod 755 "${DESTDIR}${PREFIX}/bin/tv"
 
 uninstall:

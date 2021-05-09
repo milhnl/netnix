@@ -2,6 +2,8 @@
 #ump - universal media player
 set -eu
 
+. ./ump_library_jq.sh
+
 # COMMON ----------------------------------------------------------------------
 daemon() ( exec nohup "$@" >/dev/null 2>&1 & )
 die() { printf '%s\n' "$*" >&2; exit 1; }
@@ -142,26 +144,9 @@ ump_update_library() {
     echo '] }' >>"${1-$UMP_DOWNLOADS}/.ytdl-library"
 }
 
-ump_include_library() { #1 root
-    curl -s "${1%%/.ytdl-library}/.ytdl-library" \
-        | jq '.root = "'"${1%%/.ytdl-library}/"'"'
-}
-
-ump_library_jq() {
-    { for x in $UMP_LIBRARIES; do ump_include_library "$x"; done; } \
-        | jq -rs '
-            map(
-                .root as $root | .items |=
-                    (if ($root | test("^file:")) then
-                        map(. + { url: ($root[5:] + .path)})
-                    else
-                        map(. + { url: ($root + (.path | @uri))})
-                    end)
-            )
-                | reduce .[].items as $x ([]; . + $x)
-                | unique_by(.path)
-                '"${1+| $1}"'
-        '
+ump_music_jq() {
+    ump_library_jq 'map(select(.type[] | contains("music")))
+        '"${1+| $1}"''
 }
 
 hash() {
@@ -188,7 +173,7 @@ ump_youtube_find_by_name() {
     set -- ".*$(for x; do
             echo "$x" | sed 's/[][{}()\\.$^*+?]/\\\\&/g;s/"/\\"/g'; echo '.*';
         done | tr -d '\n')"
-    ump_library_jq '.[] | select(.path | test("'"$1"'"; "i")) | .url' | sort
+    ump_music_jq '.[] | select(.path | test("'"$1"'"; "i")) | .url' | sort
 }
 
 ump_youtube_cached() {
@@ -206,7 +191,7 @@ ump_youtube_cached() {
 }
 
 ump_youtube_ui() {
-    ump_library_jq '.[].path' \
+    ump_music_jq '.[].path' \
         | sed 's/\.[a-z0-9]*$//' \
         | shuf \
         | fzy
