@@ -125,9 +125,24 @@ ump_organise_files() {
     ump_update_library
 }
 
-ump_update_library() {
-    echo '{ "version": 0, "items": [' >"${1-$UMP_DOWNLOADS}/.ytdl-library"
-    find "${1-$UMP_DOWNLOADS}" \( \
+ump_get_json_for() {
+    path="$(echo "$1" | sed 's_^./__;s/"/\\"/g')"
+    case "$1" in
+    *.aac|*.flac|*.mp3|*.wav) type='music';;
+    *.avi|*.m4v|*.mkv|*.mp4|*.mpg|*.webm)
+        case "$PWD/$path" in
+        */[Mm]usic/*) type='music","video';;
+        *) [ "$PWD" = "$UMP_DOWNLOADS" ] \
+            && type='music","video' || type='video';;
+        esac;;
+    *) type='unknown';;
+    esac
+    echo '{"path":"'"$path"'","type":["'"$type"'"]}'
+}
+
+ump_update_library() (
+    cd "${1-$UMP_DOWNLOADS}"
+    find . \( \
             -name '*.mkv' \
             -o -name '*.webm' \
             -o -name '*.mp4' \
@@ -136,13 +151,10 @@ ump_update_library() {
             -o -name '*.flac' \
             -o -name '*.mp3' \
             -o -name '*.wav' \
-        \) -exec sh -c '
-            echo "{\"path\":\"$(echo "$1" \
-                | sed '\''s/'"$(fixed_as_regex \
-                    "${1-$UMP_DOWNLOADS}")"'\///;s/"/\\\"/g'\'')\"},"
-        ' -- {} \; | sed '$s/,$//' >>"${1-$UMP_DOWNLOADS}/.ytdl-library" #"'
-    echo '] }' >>"${1-$UMP_DOWNLOADS}/.ytdl-library"
-}
+        \) -exec ump exec ump_get_json_for {} \; \
+        | jq -sc '{ version: 0, items: . }' \
+        >".ytdl-library"
+)
 
 ump_music_jq() {
     ump_library_jq 'map(select(.type[] | contains("music")))
@@ -229,7 +241,7 @@ ump_youtube_current() {
 ump_youtube() {
     MPV_SOCKET="${MPV_SOCKET:-$XDG_RUNTIME_DIR/ump_mpv_socket}"
     UMP_DOWNLOADS="${UMP_DOWNLOADS-${XDG_DATA_HOME-$HOME/.cache}/ump/ytdl-lib}"
-    mpv_ensure_running
+    [ "$1" = exec ] || mpv_ensure_running
     case "$1" in
     now) shift; ump_youtube_now "$@";;
     add) shift; ump_youtube_add "$@";;
