@@ -2,6 +2,8 @@
 #tv - watch series
 set -eu
 
+. ./ump_library_jq.sh
+
 url_decode() {
     printf "$(printf "%s" "${1-$(cat)}" | sed 's/%/\\x/g')"
 }
@@ -39,32 +41,30 @@ reorder() {
 }
 
 get_all_series() {
-    case "$TV_URL" in
-    http://*|https://*) curl -fs "$TV_URL/" | jq -r '.[] | .name';;
-    *) ls -1 "$TV_URL";;
-    esac | grep -v '^folder\.'
+    ump_library_jq \
+        'map(select(.meta | has("show")) | .meta.show) | unique | .[]'
 }
 
 get_all_episodes() { #1:series
-    case "$TV_URL" in
-    http://*|https://*)
-        curl -fs "$TV_URL/$(url_encode "$1")/" | jq -r '.[] | .name';;
-    *) ls -1 "$TV_URL/$1";;
-    esac | grep -v -e '^folder\.' -e '\.srt$'
+    ump_library_jq \
+        'map(select((.meta | has("show")) and .meta.show == "'"$(\
+                jq_escape_string "$1")"'"))
+            | .[] | "\(.meta.season).\(.meta.episode) \(.meta.title)"'
 }
 
 watch() { #1:series 2:episodename
     mkdir -p "$XDG_DATA_HOME/tv"
     echo "$2" >"$XDG_DATA_HOME/tv/$1"
-    case "$TV_URL" in
-    http://*|https://*)
-        ${PLAYER:-mpv} "$TV_URL/$(url_encode "$1")/$(url_encode "$2")";;
-    *) ${PLAYER:-mpv} "$TV_URL/$1/$2";;
-    esac
+
+    ${PLAYER:-mpv} "$(ump_library_jq \
+        'map(select((.meta | has("show")) and
+                .meta.show == "'"$(jq_escape_string "$1")"'" and
+                "\(.meta.season).\(.meta.episode) \(.meta.title)" ==
+                    "'"$(jq_escape_string "$2")"'")
+        ) | .[] | .url')"
 }
 
 serie() {
-    [ -n "${TV_URL:-}" ] || { echo "Error: TV_URL not set" >&2; exit 1; }
     recently_watched="$(mktemp)"
     XDG_DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
     mkdir -p "$XDG_DATA_HOME/tv"

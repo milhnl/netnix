@@ -137,7 +137,40 @@ ump_get_json_for() {
         esac;;
     *) type='unknown';;
     esac
-    echo '{"path":"'"$path"'","type":["'"$type"'"]}'
+    case "$type" in
+    *music*)
+        meta='{}';;
+    video)
+        case "$path" in
+        Films/*|Movies/*)
+            title="${path#*/}"; title="${title%.*}"
+            meta='{ "title": "'"$title"'" }';;
+        Series/*|TV/*)
+            show="${path#*/}"; show="${show%%/*}"
+            number="$(echo "$path" | sed '
+                /[0-9][0-9]x[0-9][0-9]/{
+                    s/.*\([0-9][0-9]\)x\([0-9][0-9]\).*/\1.\2/p
+                }
+                /[sS][0-9][0-9][eE][0-9][0-9]/{
+                    s/.*\([0-9][0-9]\)[eE]\([0-9][0-9]\)[-eE]\{0,2\}'`
+                        `'\([0-9][0-9]\)\{0,1\}.*/\1.\2-\3/
+                    s/-$//
+                }
+                /[0-9]\{2,3\}\.[0-9]\{2,3\}\(-[0-9]\{2,3\}\)\{0,1\}/{
+                    s/.*\([0-9]\{2,3\}\.[0-9]\{2,3\}\(-[0-9]'`
+                        `'\{2,3\}\)\{0,1\}\).*/\1/p
+                }
+                d
+                ')"
+            season="${number%%.*}"
+            episode="${number#*.}"
+            title="${path##*/}"; title="${title#* }"; title="${title%.*}"
+            meta='{"show":"'"$show"'","title":"'"$title"'","season":"'"$season`
+                `"'","episode":"'"$episode"'"}';;
+        *) meta='{}';;
+        esac;;
+    esac
+    echo '{"path":"'"$path"'","type":["'"$type"'"],"meta":'"$meta"'}'
 }
 
 ump_update_library() (
