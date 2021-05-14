@@ -92,7 +92,7 @@ ump_youtube_find_ext() {
 }
 
 ump_youtube_video_name() { #1:json
-    set -- "$1" "$(<"$1" jq -r '(.artist + " - " + .track)')"
+    set -- "$1" "$(<"$1" jq -r '(.artist + env.SEP + .track)')"
     case "$2" in
     \ -\ |*\ -\ |\ -\ *) <"$1" jq -r .title | yt_title_clean;;
     *) echo "$2";;
@@ -266,12 +266,13 @@ ump_youtube_current() {
     as_mpv_command get_property metadata \
             | ump_youtube_tell_mpv \
             | mpv_ipc_response_jq \
-                '"\(.ARTIST // .artist // ("" | halt_error(1))
-                    ) - \(.TITLE // .title)"' \
+                '(.ARTIST // .artist // ("" | halt_error(1))) +
+                    env.SEP + (.TITLE // .title)' \
         || mpv_command get_property media-title | sed 's/\.[^.]*$//'
 }
 
 ump_youtube() {
+    export SEP="${UMP_SEP- — }"
     MPV_SOCKET="${MPV_SOCKET:-$XDG_RUNTIME_DIR/ump_mpv_socket}"
     UMP_DOWNLOADS="${UMP_DOWNLOADS-${XDG_DATA_HOME-$HOME/.cache}/ump/ytdl-lib}"
     [ "$1" = exec ] || mpv_ensure_running
