@@ -164,8 +164,28 @@
     <script type="module">
       import { h, render, Fragment } from 'https://cdn.pika.dev/preact';
       import { useState, useEffect } from 'https://cdn.pika.dev/preact/hooks';
+      import {
+        Router,
+        Switch,
+        Route,
+        Link,
+      } from 'https://cdn.pika.dev/wouter-preact';
       import htm from 'https://cdn.pika.dev/htm';
       const html = htm.bind(h);
+
+      const currentLocation = () =>
+        window.location.hash.replace(/^#/, '') || '/';
+      const navigate = (to) => (window.location.hash = to);
+
+      const useHashLocation = () => {
+        const [loc, setLoc] = useState(currentLocation());
+        useEffect(() => {
+          const handler = () => setLoc(currentLocation());
+          window.addEventListener('hashchange', handler);
+          return () => window.removeEventListener('hashchange', handler);
+        }, []);
+        return [loc, navigate];
+      };
 
       const isAndroid = /(android)/i.test(navigator.userAgent);
       const isIOS =
@@ -175,7 +195,9 @@
 
       const encodeURIAll = (x) =>
         encodeURIComponent(x).replace(/[!'()*]/g, escape);
-      const asURL = (path) => location.href.replace(/\/[^\/]*$/, '/') + path;
+      const asURL = (path) =>
+        location.href.replace(location.hash, '').replace(/\/[^\/]*$/, '/') +
+        path;
 
       const playerAppURL = isIOS
         ? 'https://apps.apple.com/us/app/vlc-for-mobile/id650377962'
@@ -203,112 +225,150 @@
       `;
 
       const Directory = ({ name, path }) => html`
-        <a
-          className="nodefault"
-          style=${{ backgroundImage: `url(${path}/folder.jpg)` }}
-          href=${'#' + path}
-        >
-          <span>${name}</span>
-        </a>
+        <${Link} to=${path}>
+          <a
+            className="nodefault"
+            style=${{ backgroundImage: `url(${path}/folder.jpg)` }}
+          >
+            <span>${name}</span>
+          </a>
+        <//>
       `;
 
-      const rootState = {
-        pwd: '',
-        nodes: [
-          { name: 'Series', path: '/Series', type: 'directory' },
-          { name: 'Films', path: '/Films', type: 'directory' },
-          { name: 'Music', path: '/Music', type: 'directory' },
-        ],
-      };
+      const Chrome = ({ name, children }) => html`
+        <${Fragment}>
+          <header>
+            ${location.hash &&
+            html`
+              <a className="nodefault" onClick=${() => history.back()}>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 5 10">
+                  <polyline
+                    points="4,2 1,5 4,8"
+                    stroke="blue"
+                    stroke-linecap="round"
+                    fill="none"
+                  />
+                </svg>
+              </a>
+            `}
+            <span>${name}</span>
+          </header>
+          <main>${children}</main>
+        <//>
+      `;
 
       const App = (props) => {
-        const [model, setModel] = useState(rootState);
-        const load = (pwd) =>
-          pwd == ''
-            ? setModel(rootState)
-            : fetch(pwd + '/')
-                .then((x) => x.json())
-                .then((x) =>
-                  setModel({
-                    pwd,
-                    nodes: x.map((node) => ({
-                      ...node,
-                      path: pwd + '/' + encodeURIAll(node.name),
-                    })),
-                  })
-                );
-        useEffect(() => load(location.hash.slice(1)), []);
-        useEffect(() => {
-          const listener = (ev) => load(new URL(ev.newURL).hash.slice(1));
-          window.addEventListener('hashchange', listener, false);
-          return () => window.removeEventListener('hashchange', listener);
-        }, []);
-        const nodes = model.nodes
-          .filter((x) => x.name != '..' && x.name != 'folder.jpg')
-          .filter((x) => !isMobile || !x.name.match(/.srt$/));
-        const directories = nodes.filter((x) => x.type === 'directory');
-        const files = nodes.filter((x) => x.type === 'file');
+        const [library, setLibrary] = useState([]);
+        useEffect(
+          () =>
+            fetch(asURL('.ump-library.json'))
+              .then((x) => x.json())
+              .then((x) => setLibrary(x.items)),
+          []
+        );
+        //replace this mess with https://github.com/molefrog/wouter
         return html`
-          <${Fragment}>
-            <header>
-              ${model.pwd != ''
-                ? html`
-                    <a
-                      className="nodefault"
-                      href=${'#' + model.pwd.replace(/\/[^\/]*$/, '')}
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 5 10"
-                      >
-                        <polyline
-                          points="4,2 1,5 4,8"
-                          stroke="blue"
-                          stroke-linecap="round"
-                          fill="none"
-                        />
-                      </svg>
-                    </a>
-                    <span
-                      >${decodeURIComponent(
-                        model.pwd.replace(/^[^\/]*\//, '')
-                      )}</span
-                    >
-                  `
-                : html`<span>Netnix</span>`}
-            </header>
-            <main>
-              ${directories.length != 0 &&
-              html`
-                <div id="directories">
-                  ${directories.map(
-                    (x) => html`<${Directory} key=${x.path} ...${x} />`
-                  )}
-                </div>
+          <${Switch}>
+            <${Route} path="/Series">
+              ${() => html`
+                <${Chrome} name="Series">
+                  <div id="directories">
+                    ${library
+                      .filter((x) => 'show' in x.meta)
+                      .reduce(
+                        (a, n) =>
+                          a.includes(n.meta.show) ? a : [...a, n.meta.show],
+                        []
+                      )
+                      .sort((a, b) => a.localeCompare(b))
+                      .map(
+                        (x) => html`
+                          <${Directory}
+                            name=${x}
+                            path=${'/Series/' + encodeURIAll(x)}
+                          />
+                        `
+                      )}
+                  </div>
+                <//>
               `}
-              ${files.length != 0 &&
-              html`
+            <//>
+            <${Route} path="/Series/:name+">
+              ${({ name }) => html`<${Chrome} name=${decodeURIComponent(name)}>
                 <div id="files">
-                  ${files.map(
-                    (x) => html`<${File} key=${x.path} ...${x} />`
-                  )}
+                  ${library
+                    .filter(
+                      (x) =>
+                        'show' in x.meta &&
+                        x.meta.show == decodeURIComponent(name)
+                    )
+                    .sort(
+                      (a, b) =>
+                        a.meta.season.localeCompare(b.meta.season) ||
+                        a.meta.episode.localeCompare(b.meta.episode)
+                    )
+                    .map(
+                      ({ path, meta: {season, episode, title} }) => html`
+                        <${File}
+                          name=${`${season}.${episode} ${title}`}
+                          path=${encodeURI(path)}
+                        />
+                      `
+                    )}
                 </div>
+              <//>`}
+            <//>
+            <${Route} path="/Films">
+              ${({ name }) => html`<${Chrome} name="Films">
+                <div id="files">
+                  ${library
+                    .filter(
+                      (x) =>
+                        x.type.length == 1 &&
+                        x.type[0] === 'video' &&
+                        !('show' in x.meta)
+                    )
+                    .sort((a, b) => a.meta.title.localeCompare(b.meta.title))
+                    .map(
+                      (x) => html`
+                        <${File}
+                          name=${x.meta.title}
+                          path=${encodeURI(x.path)}
+                        />
+                      `
+                    )}
+                </div>
+              <//>`}
+            <//>
+            <${Route}>
+              ${() => html`
+                <${Chrome} name="Netnix">
+                  <div id="directories">
+                    <${Directory} name="Series" path="/Series" />
+                    <${Directory} name="Films" path="/Films" />
+                  </div>
+                  ${isMobile &&
+                  html`
+                    <p>
+                      You will need VLC player installed on your phone to
+                      actually play the video files on this server. You can
+                      download it at the${' '}
+                      <a href=${playerAppURL}
+                        >${isIOS ? 'App Store' : 'Play Store'}</a
+                      >
+                    </p>
+                  `}
+                <//>
               `}
-              ${model.pwd === '' &&
-              isMobile &&
-              html`
-                <p>
-                  You will need VLC player installed on your phone to actually
-                  play the video files on this server. You can download it at
-                  your <a href=${playerAppURL}>App store</a>.
-                </p>
-              `}
-            </main>
+            <//>
           <//>
         `;
       };
 
-      render(html`<${App} />`, document.body);
+      render(
+        html`<${Router} hook=${useHashLocation}><${App} /><//>`,
+        document.body
+      );
     </script>
   </body>
 </html>
