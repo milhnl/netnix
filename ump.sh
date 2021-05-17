@@ -9,6 +9,7 @@ daemon() ( exec nohup "$@" >/dev/null 2>&1 & )
 die() { printf '%s\n' "$*" >&2; exit 1; }
 exists() { command -v "$1" >/dev/null 2>&1; }
 fixed_as_regex() { echo "$1" | sed 's_[]$^*[\./]_\\&_g'; }
+fnmatch() { case "$2" in $1) return 0 ;; *) return 1 ;; esac ; }
 to_argv() { while read -r LINE; do set -- "$@" "$LINE"; done; "$@"; }
 in_dir() ( cd "$1"; shift; "$@"; )
 
@@ -267,10 +268,16 @@ ump_youtube_download() {
 }
 
 ump_youtube_find_by_name() {
-    set -- ".*$(for x; do
-            echo "$x" | sed 's/[][{}()\\.$^*+?]/\\\\&/g;s/"/\\"/g'; echo '.*';
-        done | tr -d '\n')"
-    ump_music_jq '.[] | select(.path | test("'"$1"'"; "i")) | .url' | sort
+    if [ $# -eq 1 ] && fnmatch "*$SEP*" "$1"; then
+        artist="${1%$SEP*}" title="${1#*$SEP}" ump_music_jq '.[]
+            | select(.meta.artist == env.artist and .meta.title == env.title)
+            | .url'
+    else
+        ump_music_jq '.[]
+            | select(.path | test("'".*$( \
+                for x; do jq_escape_regex "$x"; echo '.*'; done | tr -d '\n' \
+            )"'"; "i")) | .url' | sort
+    fi
 }
 
 ump_youtube_cached() {
@@ -288,8 +295,14 @@ ump_youtube_cached() {
 }
 
 ump_youtube_ui() {
-    ump_music_jq '.[].path' \
-        | sed 's/\.[a-z0-9]*$//' \
+    ump_music_jq '
+            .[] | if (.meta | has("artist")) and (.meta | has("title")) and
+                        .meta.artist != null and .meta.title != null then
+                    .meta.artist + env.SEP + .meta.title
+                else
+                    .path
+                end
+        ' \
         | shuf \
         | fzy
 }

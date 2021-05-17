@@ -5,6 +5,10 @@ jq_escape_string() { #1: string
     echo "$1" | sed 's/\\/\\&/g;s/"/\\"/g'
 }
 
+jq_escape_regex() { #1: string
+    echo "$1" | sed 's/[][{}()\\.$^*+?]/\\\\&/g;s/"/\\"/g'
+}
+
 ump_include_library() { #1 root
     curl -fs "${1%%/.ump-library.json}/.ump-library.json" \
         | jq '.root = "'"${1%%/.ump-library.json}/"'"'
