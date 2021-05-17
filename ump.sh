@@ -139,7 +139,59 @@ ump_get_json_for() {
     esac
     case "$type" in
     *music*)
-        meta='{}';;
+        case "$1" in
+        *.flac)
+            meta="$(metaflac --export-tags-to=- "$1" | awk '
+                BEGIN { out = ""; }
+                /=/ {
+                    eq = index($0, "=")
+                    field = tolower(substr($0, 1, eq - 1))
+                    value = substr($0, eq + 1)
+                    gsub("\"", "\\\"", value)
+                    gsub("[^[:print:]]", "", value)
+                    out = out sprintf("\"%s\":\"%s\",", field, value)
+                }
+                END { printf("{%s}", substr(out, 1, length(out) - 1)); }
+            ')";;#"'
+        *.mp3)
+            meta="$(mid3v2 -l "$1" | awk -vFS== '
+                BEGIN {
+                    map["TPE1"] = "ALBUMARTIST"
+                    map["TPE2"] = "ARTIST"
+                    map["TALB"] = "ALBUM"
+                    map["TYER"] = "DATE"
+                    map["TDRC"] = "DATE"
+                    map["TCON"] = "GENRE"
+                    map["TRCK"] = "TRACKNUMBER"
+                    map["TIT2"] = "TITLE"
+                    out = ""
+                }
+                /^[0-9A-Z][0-9A-Z][0-9A-Z][0-9A-Z]=/ {
+                    field = tolower(map[$1])
+                    value = substr($0, index($0, "=") + 1)
+                    gsub("\"", "\\\"", value)
+                    gsub("[^[:print:]]", "", value)
+                    if (field != "")
+                        out = out sprintf("\"%s\":\"%s\",", field, value)
+                }
+                END { printf("{%s}", substr(out, 1, length(out) - 1)); }
+            ')";;#"'
+        *.aac|*.wav)
+            meta='{}';;
+        *.mkv|*.mp4|*.webm)
+            info="$(echo "$1" \
+                | sed 's_^\(.*/\)\([^/]*\)\.[^/.]*$_\1.\2.info.json_')"
+            if [ -e "$info" ]; then
+                meta="$(<"$info" jq -c '{
+                        artist: (.artist // ("" | halt_error(1))),
+                        title: (.track // ("" | halt_error(1))),
+                        album
+                    }')" || meta='{}'
+            else
+                meta='{}'
+            fi;;
+        *) meta='{}';;
+        esac;;
     video)
         case "$path" in
         Films/*|Movies/*)
@@ -186,7 +238,7 @@ ump_update_library() (
             -o -name '*.wav' \
         \) -exec ump exec ump_get_json_for {} \; \
         | jq -sc '{ version: 0, items: . }' \
-        >".ytdl-library"
+        >".ump-library.json"
 )
 
 ump_music_jq() {
