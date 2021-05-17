@@ -131,7 +131,7 @@ ump_get_json_for() {
     case "$1" in
     *.aac|*.flac|*.mp3|*.wav) type='music';;
     *.avi|*.m4v|*.mkv|*.mp4|*.mpg|*.webm)
-        case "$PWD/$path" in
+        case "$PWD/$1" in
         */[Mm]usic/*) type='music","video';;
         *) [ "$PWD" = "$UMP_DOWNLOADS" ] \
             && type='music","video' || type='video';;
@@ -194,11 +194,11 @@ ump_get_json_for() {
         *) meta='{}';;
         esac;;
     video)
-        case "$path" in
-        Films/*|Movies/*)
+        case "$PWD/$1" in
+        */Films/*|*/Movies/*)
             title="${path#*/}"; title="${title%.*}"
             meta='{ "title": "'"$title"'" }';;
-        Series/*|TV/*)
+        */Series/*|*/TV/*)
             show="${path#*/}"; show="${show%%/*}"
             number="$(echo "$path" | sed '
                 /[0-9][0-9]x[0-9][0-9]/{
