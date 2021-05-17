@@ -180,16 +180,30 @@ ump_get_json_for() {
         *.aac|*.wav)
             meta='{}';;
         *.mkv|*.mp4|*.webm)
+            meta=''
             info="$(echo "$1" \
                 | sed 's_^\(.*/\)\([^/]*\)\.[^/.]*$_\1.\2.info.json_')"
             if [ -e "$info" ]; then
-                meta="$(<"$info" jq -c '{
-                        artist: (.artist // ("" | halt_error(1))),
-                        title: (.track // ("" | halt_error(1))),
-                        album
-                    }')" || meta='{}'
-            else
-                meta='{}'
+                if ! meta="$(<"$info" jq -c '{
+                            artist: (.artist // ("" | halt_error(1))),
+                            title: (.track // ("" | halt_error(1))),
+                            album
+                        }')"; then
+                    full="$(<"$info" jq -rc '.title // ""')"
+                fi
+            fi
+            if [ -z "$meta" ]; then
+                if [ -z "$full" ]; then
+                    full="$(echo "$1" | sed 's_.*/__;s/\.[^.]*$//')"
+                fi
+                full="$(echo "$full" | yt_title_clean | sed 's/"/\\"/g')"
+                if [ ._. = "$(echo "$full" \
+                        | sed 's/_//g;s/ - /_/g;s/[^_]*/./g')" ]; then
+                    meta='{"artist":"'"${full% - *}`
+                        `"'","title":"'"${full#* - }"'"}'
+                else
+                    meta='{}'
+                fi
             fi;;
         *) meta='{}';;
         esac;;
