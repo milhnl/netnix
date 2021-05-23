@@ -283,8 +283,8 @@ ump_youtube_download() {
 
 ump_youtube_find_by_name() {
     if [ $# -eq 1 ] && fnmatch "*$SEP*" "$1"; then
-        artist="${1%$SEP*}" title="${1#*$SEP}" ump_music_jq '.[]
-            | select(.meta.artist == env.artist and .meta.title == env.title)
+        artist="${1%$SEP*}" title="${1#*$SEP}" ump_music_jq 'first(.[]
+            | select(.meta.artist == env.artist and .meta.title == env.title))
             | .url'
     else
         ump_music_jq '.[]
