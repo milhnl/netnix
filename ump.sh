@@ -68,10 +68,13 @@ mpv_ipc_response_jq() {
     jq -sr '
         if . == [] then
             "Error: could not connect to socket.\n" | halt_error
-        elif .[0].error != "success" then
-            "Error: \(.[0].error)\n" | halt_error
         else
-            .[0].data'"${1:+ | $1}"'
+            .[] | select(has("error")) |
+                if .error != "success" then
+                    "Error: \(.error)\n" | halt_error
+                else
+                    .data'"${1:+ | $1}"'
+                end
         end'
 }
 
