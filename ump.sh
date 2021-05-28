@@ -353,7 +353,7 @@ ump_youtube_current() {
 ump_youtube() {
     export SEP="${UMP_SEP- — }"
     MPV_SOCKET="${MPV_SOCKET:-$XDG_RUNTIME_DIR/ump_mpv_socket}"
-    UMP_DOWNLOADS="${UMP_DOWNLOADS-${XDG_DATA_HOME-$HOME/.cache}/ump/ytdl-lib}"
+    UMP_DOWNLOADS="${UMP_DOWNLOADS-${XDG_CACHE_HOME-$HOME/.cache}/ump/yt-lib}"
     [ "$1" = exec ] || mpv_ensure_running
     case "$1" in
     now) shift; ump_youtube_now "$@";;
