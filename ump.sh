@@ -214,7 +214,7 @@ ump_get_json_for() {
         case "$PWD/$1" in
         */Films/*|*/Movies/*)
             title="${path#*/}"; title="${title%.*}"
-            meta='{ "title": "'"$title"'" }';;
+            meta='{"title":"'"$title"'"}';;
         */Series/*|*/TV/*)
             show="${path#*/}"; show="${show%%/*}"
             number="$(echo "$path" | sed '
