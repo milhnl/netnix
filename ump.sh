@@ -256,7 +256,8 @@ ump_update_library() (
             -o -name '*.wav' \
         \) -exec ump exec ump_get_json_for {} \; \
         | jq -sc '{ version: 0, items: . }' \
-        >".ump-library.json"
+        >".ump-library.new.json" \
+        && mv ".ump-library.new.json" ".ump-library.json"
 )
 
 ump_music_jq() {
