@@ -97,10 +97,11 @@ ump_youtube_find_ext() {
 
 ump_youtube_video_name() { #1:json
     set -- "$1" "$(<"$1" jq -r '(.artist + env.SEP + .track)')"
-    case "$2" in
-    \ -\ |*\ -\ |\ -\ *) <"$1" jq -r .title | yt_title_clean;;
-    *) echo "$2";;
-    esac | if exists ump-title-clean; then ump-title-clean; else cat; fi
+    if fnmatch "?$SEP?" "$2"; then
+        echo "$2"
+    else
+        <"$1" jq -r .title | yt_title_clean
+    fi | if exists ump-title-clean; then ump-title-clean; else cat; fi
 }
 
 ump_youtube_move_file() { #1:file 2:json
