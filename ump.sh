@@ -347,11 +347,12 @@ ump_youtube_add() {
 }
 
 ump_youtube_current() {
-    as_mpv_command get_property metadata \
-            | ump_youtube_tell_mpv \
-            | mpv_ipc_response_jq \
-                '(.ARTIST // .artist // ("" | halt_error(1))) +
-                    env.SEP + (.TITLE // .title)' \
+    mpv_command get_property chapter-metadata/title 2>/dev/null \
+        || as_mpv_command get_property metadata \
+                | ump_youtube_tell_mpv \
+                | mpv_ipc_response_jq \
+                    '(.ARTIST // .artist // ("" | halt_error(1))) +
+                        env.SEP + (.TITLE // .title)' 2>/dev/null \
         || mpv_command get_property media-title | sed 's/\.[^.]*$//'
 }
 
