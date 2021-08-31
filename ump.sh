@@ -41,6 +41,37 @@ ump_applemusic() {
 }
 
 # PROVIDER: YOUTUBE -----------------------------------------------------------
+MPV_LUA='
+function seek_to_last_chapter()
+    local chapters = mp.get_property_number("chapters") or 0
+    if chapters ~= 0 then
+        mp.commandv("set", "chapter", chapters - 1)
+        mp.commandv("script-message", "osc-chapterlist")
+    else
+        mp.commandv("script-message", "osc-playlist")
+    end
+    mp.unregister_event(seek_to_last_chapter)
+end
+
+function seek(offset)
+    local chapter  = mp.get_property_number("chapter") or 0
+    local chapters = mp.get_property_number("chapters") or 0
+    if chapter + offset < 0 then
+        mp.commandv("playlist_prev")
+        mp.register_event("file-loaded", seek_to_last_chapter)
+    elseif chapter + offset >= chapters then
+        mp.commandv("playlist_next")
+        mp.commandv("script-message", "osc-playlist")
+    else
+        mp.commandv("set", "chapter", chapter + offset)
+        mp.commandv("script-message", "osc-chapterlist")
+    end
+end
+
+mp.add_key_binding(nil, "ump-next", function() seek(1) end)
+mp.add_key_binding(nil, "ump-prev", function() seek(-1) end)
+'
+
 mpv_ensure_running() {
     if ! exists ump_youtube_tell_mpv; then
         if exists socat; then
@@ -53,6 +84,11 @@ mpv_ensure_running() {
     fi
     if ! mpv_command get_version >/dev/null 2>&1; then
         exists mpv || die "Error: mpv is not installed"
+        MPV_HOME="${MPV_HOME-${XDG_CONFIG_HOME-$HOME/.config}/mpv}"
+        if ! echo "$MPV_LUA" | diff - "$MPV_HOME/scripts/ump-ext.lua" \
+                >/dev/null 2>&1; then
+            echo "$MPV_LUA" >"$MPV_HOME/scripts/ump-ext.lua"
+        fi
         daemon mpv --idle --input-ipc-server="$MPV_SOCKET"
         until mpv_command get_version >/dev/null 2>&1; do sleep 1; done
     fi
@@ -366,8 +402,8 @@ ump_youtube() {
     now) shift; ump_youtube_now "$@";;
     add) shift; ump_youtube_add "$@";;
     toggle) mpv_command cycle pause;;
-    prev) shift; mpv_command playlist_prev;;
-    next) shift; mpv_command playlist_next;;
+    prev) shift; mpv_command script-binding ump-prev;;
+    next) shift; mpv_command script-binding ump-next;;
     current) ump_youtube_current;;
     exec) shift; "$@";;
     rsync) shift; in_dir "$UMP_DOWNLOADS" rsync --progress -rh \
