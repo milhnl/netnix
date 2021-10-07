@@ -87,6 +87,7 @@ mpv_ensure_running() {
         MPV_HOME="${MPV_HOME-${XDG_CONFIG_HOME-$HOME/.config}/mpv}"
         if ! echo "$MPV_LUA" | diff - "$MPV_HOME/scripts/ump-ext.lua" \
                 >/dev/null 2>&1; then
+            mkdir -p "$MPV_HOME/scripts"
             echo "$MPV_LUA" >"$MPV_HOME/scripts/ump-ext.lua"
         fi
         daemon mpv --idle --input-ipc-server="$MPV_SOCKET"
