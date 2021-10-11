@@ -222,6 +222,7 @@ ump_get_json_for() {
             meta='{}';;
         *.mkv|*.mp4|*.webm)
             meta=''
+            full=''
             info="$(echo "$1" \
                 | sed 's_^\(.*/\)\([^/]*\)\.[^/.]*$_\1.\2.info.json_')"
             if [ -e "$info" ]; then
