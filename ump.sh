@@ -134,7 +134,7 @@ ump_youtube_find_ext() {
 
 ump_youtube_video_name() { #1:json
     set -- "$1" "$(<"$1" jq -r '(.artist + env.SEP + .track)')"
-    if fnmatch "?$SEP?" "$2"; then
+    if fnmatch "*?$SEP?*" "$2"; then
         echo "$2"
     else
         <"$1" jq -r .title | yt_title_clean
