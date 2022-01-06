@@ -315,6 +315,7 @@ ump_youtube_download() {
     set -- "$*" "$(hash "$*")"
     mkdir -p "$UMP_DOWNLOADS"
     yt-dlp \
+        --abort-on-unavailable-fragment --fragment-retries=20 \
         --default-search ytsearch \
         --download-archive "$UMP_DOWNLOADS/.ytdl-archive" \
         --write-info-json --add-metadata \
