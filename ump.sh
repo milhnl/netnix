@@ -314,7 +314,8 @@ hash() {
 ump_youtube_download() {
     set -- "$*" "$(hash "$*")"
     mkdir -p "$UMP_DOWNLOADS"
-    youtube-dl --default-search ytsearch \
+    yt-dlp \
+        --default-search ytsearch \
         --download-archive "$UMP_DOWNLOADS/.ytdl-archive" \
         --write-info-json --add-metadata \
         -o "$UMP_DOWNLOADS/.ytdl-tmp-$2-%(autonumber)s.%(ext)s" "$1" >&2
