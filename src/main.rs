@@ -12,6 +12,12 @@ enum FileType {
 }
 
 #[derive(Serialize)]
+struct Library {
+    version: u8,
+    items: Vec<Item>,
+}
+
+#[derive(Serialize)]
 struct Item {
     path: PathBuf,
     r#type: Vec<String>,
@@ -95,11 +101,15 @@ fn main() {
         })
         .expect("Could not determine default library, provide one manually.");
     env::set_current_dir(&root).expect("Could not open library folder");
-    WalkDir::new(&root)
-        .into_iter()
-        .filter_map(|v| v.ok())
-        .filter_map(|x| {
-            get_type(x.path().strip_prefix(&root).ok()?.to_path_buf())
-        })
-        .for_each(|x| println!("{}", serde_json::to_string(&x).unwrap()));
+    let library = Library {
+        version: 0,
+        items: WalkDir::new(&root)
+            .into_iter()
+            .filter_map(|v| v.ok())
+            .filter_map(|x| {
+                get_type(x.path().strip_prefix(&root).ok()?.to_path_buf())
+            })
+            .collect(),
+    };
+    println!("{}", serde_json::to_string(&library).unwrap());
 }
