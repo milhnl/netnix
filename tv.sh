@@ -73,6 +73,7 @@ serie() {
         | cat "$recently_watched" - \
         | awk '!_[$0]++' \
         | fzy)"
+    [ -n "$1" ] || exit 1
     rm "$recently_watched"
     set -- "$1" "$(get_all_episodes "$1" \
         | reorder "$(cat "$XDG_DATA_HOME/tv/$1" 2>/dev/null || true)" \
