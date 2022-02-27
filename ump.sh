@@ -397,7 +397,7 @@ ump_youtube_current() {
 }
 
 ump_youtube() {
-    export SEP="${UMP_SEP- — }"
+    export SEP="${UMP_SEP- – }"
     MPV_SOCKET="${MPV_SOCKET:-$XDG_RUNTIME_DIR/ump_mpv_socket}"
     UMP_DOWNLOADS="${UMP_DOWNLOADS-${XDG_CACHE_HOME-$HOME/.cache}/ump/yt-lib}"
     UMP_LIBRARIES="file:$UMP_DOWNLOADS${UMP_LIBRARIES+ $UMP_LIBRARIES}"
