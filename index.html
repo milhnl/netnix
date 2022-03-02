@@ -205,20 +205,39 @@
         ? 'https://play.google.com/store/apps/details?id=org.videolan.vlc'
         : false;
 
-      const asPlayableURL = (path) =>
+      const asPlayableURL = (path, subtitle) =>
         isAndroid
           ? 'vlc://' + asURL(path)
           : isIOS
           ? `vlc-x-callback://x-callback-url/stream?url=${encodeURIAll(
               asURL(path)
-            )}`
+            )}${subtitle ? `&sub=${encodeURIAll(asURL(subtitle))}` : ''}`
           : asURL(path);
 
-      const File = ({ name, path }) => html`
+      const getSubtitle = (library, item) =>
+        ('show' in item.meta
+          ? library.filter(
+              (x) =>
+                x.type.includes('subtitle') &&
+                x.meta.show === item.meta.show &&
+                x.meta.season === item.meta.season &&
+                x.meta.episode === item.meta.episode
+            )
+          : library.filter(
+              (x) =>
+                x.type.includes('subtitle') && x.meta.title === item.meta.title
+            )
+        )
+          .sort(
+            (a, b) => ([a, null, b].findIndex((x) => x === 'en') + 1 || 2) - 2
+          )
+          .map((x) => encodeURI(x.path))[0];
+
+      const File = ({ name, path, subtitle }) => html`
         <a
           className="nodefault"
           href=${path.match(/\.(mkv|webm|mp4|m4v)$/)
-            ? asPlayableURL(path)
+            ? asPlayableURL(path, subtitle)
             : path}
           >${isMobile ? name.replace(/\.[a-z0-9]+$/, '') : name}</a
         >
@@ -274,7 +293,9 @@
                 <${Chrome} name="Series">
                   <div id="directories">
                     ${library
-                      .filter((x) => 'show' in x.meta)
+                      .filter(
+                        (x) => x.type.includes('video') && 'show' in x.meta
+                      )
                       .reduce(
                         (a, n) =>
                           a.includes(n.meta.show) ? a : [...a, n.meta.show],
@@ -300,6 +321,7 @@
                     .filter(
                       (x) =>
                         'show' in x.meta &&
+                        x.type.includes('video') &&
                         x.meta.show == decodeURIComponent(name)
                     )
                     .sort(
@@ -308,10 +330,15 @@
                         a.meta.episode.localeCompare(b.meta.episode)
                     )
                     .map(
-                      ({ path, meta: {season, episode, title} }) => html`
+                      (x) => html`
                         <${File}
-                          name=${`${season}.${episode} ${title}`}
-                          path=${encodeURI(path)}
+                          name=${x.meta.season +
+                          '.' +
+                          x.meta.episode +
+                          ' ' +
+                          x.meta.title}
+                          path=${encodeURI(x.path)}
+                          subtitle=${getSubtitle(library, x)}
                         />
                       `
                     )}
@@ -326,7 +353,8 @@
                       (x) =>
                         x.type.length == 1 &&
                         x.type[0] === 'video' &&
-                        !('show' in x.meta)
+                        !('show' in x.meta) &&
+                        'title' in x.meta
                     )
                     .sort((a, b) => a.meta.title.localeCompare(b.meta.title))
                     .map(
@@ -334,6 +362,7 @@
                         <${File}
                           name=${x.meta.title}
                           path=${encodeURI(x.path)}
+                          subtitle=${getSubtitle(library, x)}
                         />
                       `
                     )}

@@ -177,6 +177,7 @@ ump_get_json_for() {
         *) [ "$PWD" = "$UMP_DOWNLOADS" ] \
             && type='music","video' || type='video';;
         esac;;
+    *.srt) type='subtitle';;
     *) type='unknown';;
     esac
     case "$type" in
@@ -249,7 +250,7 @@ ump_get_json_for() {
             fi;;
         *) meta='{}';;
         esac;;
-    video)
+    video|subtitle)
         case "$PWD/$1" in
         */Films/*|*/Movies/*)
             title="${path#*/}"; title="${title%.*}"

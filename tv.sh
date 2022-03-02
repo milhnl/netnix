@@ -42,13 +42,14 @@ reorder() {
 
 get_all_series() {
     ump_library_jq \
-        'map(select(.meta | has("show")) | .meta.show) | unique | .[]'
+        'map(select((.type[] | contains("video")) and (.meta | has("show")))
+            | .meta.show) | unique | .[]'
 }
 
 get_all_episodes() { #1:series
     ump_library_jq \
-        'map(select((.meta | has("show")) and .meta.show == "'"$(\
-                jq_escape_string "$1")"'"))
+        'map(select((.type[] | contains("video")) and (.meta | has("show"))
+                and .meta.show == "'"$(jq_escape_string "$1")"'"))
             | .[] | "\(.meta.season).\(.meta.episode) \(.meta.title)"'
 }
 
@@ -56,12 +57,29 @@ watch() { #1:series 2:episodename
     mkdir -p "$XDG_DATA_HOME/tv"
     echo "$2" >"$XDG_DATA_HOME/tv/$1"
 
-    ${PLAYER:-mpv} "$(ump_library_jq \
-        'map(select((.meta | has("show")) and
-                .meta.show == "'"$(jq_escape_string "$1")"'" and
-                "\(.meta.season).\(.meta.episode) \(.meta.title)" ==
-                    "'"$(jq_escape_string "$2")"'")
-        ) | .[] | .url')"
+    set -- "$(jq_escape_string "$1")" "$(jq_escape_string "$2")"
+    set -- "$1" "$2" \
+        "$(ump_library_jq \
+            'map(select(
+                (.type[] | contains("video")) and
+                (.meta | has("show")) and
+                (.meta.show == "'"$1"'") and
+                "\(.meta.season).\(.meta.episode) \(.meta.title)" == "'"$2"'"
+            )) | .[] | .url')" \
+        "$(ump_library_jq \
+            'map(select(
+                (.type[] | contains("subtitle")) and
+                (.meta | has("show")) and
+                (.meta.show == "'"$1"'") and
+                "\(.meta.season).\(.meta.episode) \(.meta.title)" == "'"$2"'"
+            )) | sort_by(
+                if .meta.language == "$(jq_escape_string en)" then 0 else 1 end
+            ) | .[0] | .url')"
+    if [ "$4" != null ]; then
+        ${PLAYER:-mpv} "$3" --sub-file="$4"
+    else
+        ${PLAYER:-mpv} "$3"
+    fi
 }
 
 serie() {
