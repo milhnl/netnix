@@ -402,7 +402,7 @@ ump_youtube() {
     MPV_SOCKET="${MPV_SOCKET:-$XDG_RUNTIME_DIR/ump_mpv_socket}"
     UMP_DOWNLOADS="${UMP_DOWNLOADS-${XDG_CACHE_HOME-$HOME/.cache}/ump/yt-lib}"
     UMP_LIBRARIES="file:$UMP_DOWNLOADS${UMP_LIBRARIES+ $UMP_LIBRARIES}"
-    [ "$1" = exec ] || mpv_ensure_running
+    [ "$1" = exec ] && [ "$2" = ump_get_json_for ] || mpv_ensure_running
     case "$1" in
     now) shift; ump_youtube_now "$@";;
     add) shift; ump_youtube_add "$@";;
