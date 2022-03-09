@@ -1,8 +1,39 @@
 import { Fragment, html, render, useEffect, useState } from './deps/preact.ts';
 import { Link, Route, Router, Switch } from './deps/wouter-preact.ts';
 
+interface EpisodeMeta {
+  show: string;
+  season: string;
+  episode: string;
+  title: string;
+  language?: string;
+}
+interface MusicMeta {
+  artist: string;
+  title: string;
+}
+interface FilmMeta {
+  title: string;
+  language?: string;
+}
+
+type Item = {
+  meta: {} | FilmMeta | EpisodeMeta | MusicMeta;
+  path: string;
+  type: ('music' | 'video' | 'subtitle')[];
+};
+type Library = {
+  version: number;
+  items: Item[];
+};
+
+const isEpisode = (x: Item): x is Item & { meta: EpisodeMeta } =>
+  'show' in x.meta;
+const isFilm = (x: Item): x is Item & { meta: FilmMeta } =>
+  'title' in x.meta && !('show' in x.meta);
+
 const currentLocation = () => window.location.hash.replace(/^#/, '') || '/';
-const navigate = (to) => (window.location.hash = to);
+const navigate = (to: string) => (window.location.hash = to);
 
 const useHashLocation = () => {
   const [loc, setLoc] = useState(currentLocation());
@@ -20,8 +51,9 @@ const isIOS =
   (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 const isMobile = isIOS || isAndroid;
 
-const encodeURIAll = (x) => encodeURIComponent(x).replace(/[!'()*]/g, escape);
-const asURL = (path) =>
+const encodeURIAll = (x: string) =>
+  encodeURIComponent(x).replace(/[!'()*]/g, escape);
+const asURL = (path: string) =>
   location.href.replace(location.hash, '').replace(/\/[^\/]*$/, '/') + path;
 
 const playerAppURL = isIOS
@@ -30,7 +62,7 @@ const playerAppURL = isIOS
   ? 'https://play.google.com/store/apps/details?id=org.videolan.vlc'
   : false;
 
-const asPlayableURL = (path, subtitle) =>
+const asPlayableURL = (path: string, subtitle: string | undefined) =>
   isAndroid
     ? 'vlc://' + asURL(path)
     : isIOS
@@ -39,23 +71,43 @@ const asPlayableURL = (path, subtitle) =>
       )}${subtitle ? `&sub=${encodeURIAll(asURL(subtitle))}` : ''}`
     : asURL(path);
 
-const getSubtitle = (library, item) =>
-  ('show' in item.meta
-    ? library.filter(
-        (x) =>
-          x.type.includes('subtitle') &&
-          x.meta.show === item.meta.show &&
-          x.meta.season === item.meta.season &&
-          x.meta.episode === item.meta.episode
-      )
-    : library.filter(
-        (x) => x.type.includes('subtitle') && x.meta.title === item.meta.title
-      )
+const getSubtitle = (library: Item[], item: Item) =>
+  (
+    (isEpisode(item)
+      ? library.filter(
+          (x) =>
+            isEpisode(x) &&
+            x.type.includes('subtitle') &&
+            x.meta.show === item.meta.show &&
+            x.meta.season === item.meta.season &&
+            x.meta.episode === item.meta.episode
+        )
+      : isFilm(item)
+      ? library.filter(
+          (x) =>
+            isFilm(x) &&
+            x.type.includes('subtitle') &&
+            x.meta.title === item.meta.title
+        )
+      : []) as (Item & { meta: { language: string } })[]
   )
-    .sort((a, b) => ([a, null, b].findIndex((x) => x === 'en') + 1 || 2) - 2)
+    .sort(
+      (a, b) =>
+        ([a.meta.language, null, b.meta.language].findIndex(
+          (x) => x === 'en'
+        ) + 1 || 2) - 2
+    )
     .map((x) => encodeURI(x.path))[0];
 
-const File = ({ name, path, subtitle }) =>
+const File = ({
+  name,
+  path,
+  subtitle,
+}: {
+  name: string;
+  path: string;
+  subtitle: string | undefined;
+}) =>
   html`
     <a
       className="nodefault"
@@ -66,7 +118,7 @@ const File = ({ name, path, subtitle }) =>
     >
   `;
 
-const Directory = ({ name, path }) =>
+const Directory = ({ name, path }: { name: string; path: string }) =>
   html`
     <${Link} to=${path}>
       <a
@@ -78,7 +130,7 @@ const Directory = ({ name, path }) =>
     <//>
   `;
 
-const Chrome = ({ name, children }) =>
+const Chrome = ({ name, children }: { name: string; children: any }) =>
   html`
     <${Fragment}>
       <header>
@@ -101,16 +153,13 @@ const Chrome = ({ name, children }) =>
     <//>
   `;
 
-const App = (props) => {
-  const [library, setLibrary] = useState([]);
-  useEffect(
-    () =>
-      fetch(asURL('.ump-library.json'))
-        .then((x) => x.json())
-        .then((x) => setLibrary(x.items)),
-    []
-  );
-  //replace this mess with https://github.com/molefrog/wouter
+const App = () => {
+  const [library, setLibrary] = useState([] as Item[]);
+  useEffect(() => {
+    fetch(asURL('.ump-library.json'))
+      .then((x) => x.json())
+      .then((x) => setLibrary(x.items));
+  }, []);
   return html`
     <${Switch}>
       <${Route} path="/Series">
@@ -119,11 +168,12 @@ const App = (props) => {
             <${Chrome} name="Series">
               <div id="directories">
                 ${library
-                  .filter((x) => x.type.includes('video') && 'show' in x.meta)
+                  .filter(isEpisode)
+                  .filter((x) => x.type.includes('video'))
                   .reduce(
                     (a, n) =>
                       a.includes(n.meta.show) ? a : [...a, n.meta.show],
-                    []
+                    [] as string[]
                   )
                   .sort((a, b) => a.localeCompare(b))
                   .map(
@@ -140,13 +190,13 @@ const App = (props) => {
           `}
       <//>
       <${Route} path="/Series/:name+">
-        ${({ name }) =>
+        ${({ name }: { name: string }) =>
           html`<${Chrome} name=${decodeURIComponent(name)}>
             <div id="files">
               ${library
+                .filter(isEpisode)
                 .filter(
                   (x) =>
-                    'show' in x.meta &&
                     x.type.includes('video') &&
                     x.meta.show == decodeURIComponent(name)
                 )
@@ -173,17 +223,12 @@ const App = (props) => {
           <//>`}
       <//>
       <${Route} path="/Films">
-        ${({ name }) =>
+        ${() =>
           html`<${Chrome} name="Films">
             <div id="files">
               ${library
-                .filter(
-                  (x) =>
-                    x.type.length == 1 &&
-                    x.type[0] === 'video' &&
-                    !('show' in x.meta) &&
-                    'title' in x.meta
-                )
+                .filter(isFilm)
+                .filter((x) => x.type.length == 1 && x.type[0] === 'video')
                 .sort((a, b) => a.meta.title.localeCompare(b.meta.title))
                 .map(
                   (x) =>
