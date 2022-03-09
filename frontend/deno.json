@@ -3,6 +3,9 @@
     "lib": [
       "dom",
       "deno.ns"
-    ]
+    ],
+    "jsx": "react",
+    "jsxFactory": "h",
+    "jsxFragmentFactory": "Fragment"
   }
 }
