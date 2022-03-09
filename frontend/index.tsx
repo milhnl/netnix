@@ -5,8 +5,8 @@ import {
   render,
   useEffect,
   useState,
-} from './deps/preact.ts';
-import { Link, Route, Router, Switch } from './deps/wouter-preact.ts';
+} from "./deps/preact.ts";
+import { Link, Route, Router, Switch } from "./deps/wouter-preact.ts";
 
 interface EpisodeMeta {
   show: string;
@@ -27,7 +27,7 @@ interface FilmMeta {
 type Item = {
   meta: {} | FilmMeta | EpisodeMeta | MusicMeta;
   path: string;
-  type: ('music' | 'video' | 'subtitle')[];
+  type: ("music" | "video" | "subtitle")[];
 };
 type Library = {
   version: number;
@@ -35,74 +35,75 @@ type Library = {
 };
 
 const isEpisode = (x: Item): x is Item & { meta: EpisodeMeta } =>
-  'show' in x.meta;
+  "show" in x.meta;
 const isFilm = (x: Item): x is Item & { meta: FilmMeta } =>
-  'title' in x.meta && !('show' in x.meta);
+  "title" in x.meta && !("show" in x.meta);
 
-const currentLocation = () => window.location.hash.replace(/^#/, '') || '/';
+const currentLocation = () => window.location.hash.replace(/^#/, "") || "/";
 const navigate = (to: string) => (window.location.hash = to);
 
 const useHashLocation = (): [string, (path: string) => void] => {
   const [loc, setLoc] = useState(currentLocation());
   useEffect(() => {
     const handler = () => setLoc(currentLocation());
-    window.addEventListener('hashchange', handler);
-    return () => window.removeEventListener('hashchange', handler);
+    window.addEventListener("hashchange", handler);
+    return () => window.removeEventListener("hashchange", handler);
   }, []);
   return [loc, navigate];
 };
 
 const isAndroid = /(android)/i.test(navigator.userAgent);
-const isIOS =
-  /iPad|iPhone|iPod/.test(navigator.platform) ||
-  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const isIOS = /iPad|iPhone|iPod/.test(navigator.platform) ||
+  (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 const isMobile = isIOS || isAndroid;
 
 const encodeURIAll = (x: string) =>
   encodeURIComponent(x).replace(/[!'()*]/g, escape);
 const asURL = (path: string) =>
-  location.href.replace(location.hash, '').replace(/\/[^\/]*$/, '/') + path;
+  location.href.replace(location.hash, "").replace(/\/[^\/]*$/, "/") + path;
 
 const playerAppURL = isIOS
-  ? 'https://apps.apple.com/us/app/vlc-for-mobile/id650377962'
+  ? "https://apps.apple.com/us/app/vlc-for-mobile/id650377962"
   : isAndroid
-  ? 'https://play.google.com/store/apps/details?id=org.videolan.vlc'
+  ? "https://play.google.com/store/apps/details?id=org.videolan.vlc"
   : undefined;
 
 const asPlayableURL = (path: string, subtitle: string | undefined) =>
   isAndroid
-    ? 'vlc://' + asURL(path)
+    ? "vlc://" + asURL(path)
     : isIOS
-    ? `vlc-x-callback://x-callback-url/stream?url=${encodeURIAll(
-        asURL(path)
-      )}${subtitle ? `&sub=${encodeURIAll(asURL(subtitle))}` : ''}`
+    ? `vlc-x-callback://x-callback-url/stream?url=${
+      encodeURIAll(
+        asURL(path),
+      )
+    }${subtitle ? `&sub=${encodeURIAll(asURL(subtitle))}` : ""}`
     : asURL(path);
 
 const getSubtitle = (library: Item[], item: Item) =>
   (
     (isEpisode(item)
       ? library.filter(
-          (x) =>
-            isEpisode(x) &&
-            x.type.includes('subtitle') &&
-            x.meta.show === item.meta.show &&
-            x.meta.season === item.meta.season &&
-            x.meta.episode === item.meta.episode
-        )
+        (x) =>
+          isEpisode(x) &&
+          x.type.includes("subtitle") &&
+          x.meta.show === item.meta.show &&
+          x.meta.season === item.meta.season &&
+          x.meta.episode === item.meta.episode,
+      )
       : isFilm(item)
       ? library.filter(
-          (x) =>
-            isFilm(x) &&
-            x.type.includes('subtitle') &&
-            x.meta.title === item.meta.title
-        )
+        (x) =>
+          isFilm(x) &&
+          x.type.includes("subtitle") &&
+          x.meta.title === item.meta.title,
+      )
       : []) as (Item & { meta: { language: string } })[]
   )
     .sort(
       (a, b) =>
         ([a.meta.language, null, b.meta.language].findIndex(
-          (x) => x === 'en'
-        ) + 1 || 2) - 2
+              (x) => x === "en",
+            ) + 1 || 2) - 2,
     )
     .map((x) => encodeURI(x.path))[0];
 
@@ -117,13 +118,11 @@ const File = ({
 }) => (
   <a
     className="nodefault"
-    href={
-      path.match(/\.(mkv|webm|mp4|m4v)$/)
-        ? asPlayableURL(path, subtitle)
-        : path
-    }
+    href={path.match(/\.(mkv|webm|mp4|m4v)$/)
+      ? asPlayableURL(path, subtitle)
+      : path}
   >
-    {isMobile ? name.replace(/\.[a-z0-9]+$/, '') : name}
+    {isMobile ? name.replace(/\.[a-z0-9]+$/, "") : name}
   </a>
 );
 const Directory = ({ name, path }: { name: string; path: string }) => (
@@ -159,7 +158,7 @@ const Chrome: FC<{ name: string }> = ({ name, children }) => (
 const App = () => {
   const [library, setLibrary] = useState([] as Item[]);
   useEffect(() => {
-    fetch(asURL('.ump-library.json'))
+    fetch(asURL(".ump-library.json"))
       .then((x) => x.json())
       .then((x) => setLibrary(x.items));
   }, []);
@@ -171,15 +170,14 @@ const App = () => {
             <div id="directories">
               {library
                 .filter(isEpisode)
-                .filter((x) => x.type.includes('video'))
+                .filter((x) => x.type.includes("video"))
                 .reduce(
-                  (a, n) =>
-                    a.includes(n.meta.show) ? a : [...a, n.meta.show],
-                  [] as string[]
+                  (a, n) => a.includes(n.meta.show) ? a : [...a, n.meta.show],
+                  [] as string[],
                 )
                 .sort((a, b) => a.localeCompare(b))
                 .map((x) => (
-                  <Directory name={x} path={'/Series/' + encodeURIAll(x)} />
+                  <Directory name={x} path={"/Series/" + encodeURIAll(x)} />
                 ))}
             </div>
           </Chrome>
@@ -193,19 +191,18 @@ const App = () => {
                 .filter(isEpisode)
                 .filter(
                   (x) =>
-                    x.type.includes('video') &&
-                    x.meta.show == decodeURIComponent(name)
+                    x.type.includes("video") &&
+                    x.meta.show == decodeURIComponent(name),
                 )
                 .sort(
                   (a, b) =>
                     a.meta.season.localeCompare(b.meta.season) ||
-                    a.meta.episode.localeCompare(b.meta.episode)
+                    a.meta.episode.localeCompare(b.meta.episode),
                 )
                 .map((x) => (
                   <File
-                    name={
-                      x.meta.season + '.' + x.meta.episode + ' ' + x.meta.title
-                    }
+                    name={x.meta.season + "." + x.meta.episode + " " +
+                      x.meta.title}
                     path={encodeURI(x.path)}
                     subtitle={getSubtitle(library, x)}
                   />
@@ -220,7 +217,7 @@ const App = () => {
             <div id="files">
               {library
                 .filter(isFilm)
-                .filter((x) => x.type.length == 1 && x.type[0] === 'video')
+                .filter((x) => x.type.length == 1 && x.type[0] === "video")
                 .sort((a, b) => a.meta.title.localeCompare(b.meta.title))
                 .map((x) => (
                   <File
@@ -243,8 +240,9 @@ const App = () => {
             {isMobile && (
               <p>
                 You will need VLC player installed on your phone to actually
-                play the video files on this server. You can download it at the{' '}
-                <a href={playerAppURL}>{isIOS ? 'App Store' : 'Play Store'}</a>
+                play the video files on this server. You can download it at the
+                {" "}
+                <a href={playerAppURL}>{isIOS ? "App Store" : "Play Store"}</a>
               </p>
             )}
           </Chrome>
@@ -258,5 +256,5 @@ render(
   <Router hook={useHashLocation}>
     <App />
   </Router>,
-  document.body
+  document.body,
 );
