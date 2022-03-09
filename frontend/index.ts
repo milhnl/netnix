@@ -1,14 +1,5 @@
-import {
-  Fragment,
-  html,
-  Link,
-  render,
-  Route,
-  Router,
-  Switch,
-  useEffect,
-  useState,
-} from './deps.ts';
+import { Fragment, html, render, useEffect, useState } from './deps/preact.ts';
+import { Link, Route, Router, Switch } from './deps/wouter-preact.ts';
 
 const currentLocation = () => window.location.hash.replace(/^#/, '') || '/';
 const navigate = (to) => (window.location.hash = to);

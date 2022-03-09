@@ -1,6 +1,7 @@
-dist/index.html: index.html index.ts Makefile
+dist/index.html: index.html index.ts Makefile \
+		deps/preact.ts deps/wouter-preact.ts
 	mkdir -p dist
-	deno bundle --no-check index.ts >dist/index.js
+	deno bundle  --config=deno.json --no-check index.ts >dist/index.js
 	<index.html awk '\
 		/<!-- MODULE -->/ { \
 			while ((getline line <"dist/index.js") > 0 ) { \
