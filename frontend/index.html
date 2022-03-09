@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Netnix</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <style>
+      @media (prefers-color-scheme: dark) {
+        :root {
+          background: #111;
+          color: white;
+          --header-color: black;
+        }
+        a {
+          color: lightblue;
+        }
+      }
+      @media (prefers-color-scheme: light) {
+        :root {
+          background: white;
+          color: #555;
+          --header-color: white;
+        }
+      }
+      @media (min-width: 1000px) {
+        :root {
+          --item-size: 20vw;
+          --header-height: 3vw;
+        }
+      }
+      @media (max-width: 1000px) {
+        :root {
+          --item-size: 25vw;
+          --header-height: 4vw;
+        }
+      }
+      @media (max-width: 800px) {
+        :root {
+          --item-size: 33.33vw;
+          --header-height: 6vw;
+        }
+      }
+      @media (max-width: 600px) {
+        :root {
+          --item-size: 50vw;
+          --header-height: 10vw;
+        }
+      }
+      @media (max-width: 200px) {
+        :root {
+          --item-size: 100vw;
+          --header-height: 15vw;
+        }
+      }
+      @supports (-webkit-touch-callout: none) {
+        body {
+          display: grid;
+          position: fixed;
+          width: 100vw;
+          height: 100vh;
+          height: -webkit-fill-available;
+          grid-template-areas: 'header' 'main';
+          grid-template-rows: auto 1fr;
+        }
+        header {
+          grid-area: 'header';
+        }
+        main {
+          grid-area: 'main';
+          overflow-y: scroll;
+          overflow-x: hidden;
+          width: 100vw;
+        }
+      }
+      body {
+        width: 100vw;
+        margin: 0;
+        overflow-x: hidden;
+        font-family: sans-serif;
+      }
+      header {
+        display: flex;
+        flex-direction: row;
+        min-height: var(--header-height);
+        vertical-align: middle;
+        background-color: var(--header-color);
+        font-size: calc(var(--header-height) * 0.5);
+        padding: 0 var(--header-height);
+      }
+      header a.nodefault {
+        position: absolute;
+        left: 0;
+        display: block;
+        flex: 0 var(--header-height);
+        line-height: var(--header-height);
+        height: var(--header-height);
+        width: var(--header-height);
+        font-size: calc(var(--header-height) * 0.7);
+        text-align: center;
+      }
+      header svg {
+        display: inline-block;
+        vertical-align: middle;
+        height: 75%;
+      }
+      header span {
+        flex: 1;
+        text-align: center;
+        line-height: var(--header-height);
+      }
+      div#directories {
+        display: flex;
+        flex-wrap: wrap;
+      }
+      div#directories > * {
+        cursor: pointer;
+        width: var(--item-size);
+        height: var(--item-size);
+        background-color: rgba(128, 128, 128, 0.1);
+        background-size: cover;
+        background-position: center;
+        display: grid;
+        align-items: end;
+        justify-items: stretch;
+      }
+      div#directories > * > span {
+        padding: 0.2em 0.5em;
+        background-color: rgba(0, 0, 0, 0.75);
+        text-align: center;
+      }
+      @media (prefers-color-scheme: light) {
+        div#directories > * > span {
+          color: white;
+        }
+      }
+      div#files {
+        display: flex;
+        flex-direction: column;
+      }
+      div#files > * {
+        padding: 0.5em 1em;
+      }
+      div#files > *:nth-child(even) {
+        background-color: rgba(128, 128, 128, 0.1);
+      }
+      a.nodefault {
+        font-size: 1.2rem;
+        line-height: 1.3;
+        color: inherit;
+        text-decoration: none;
+      }
+      p {
+        margin: 4vmin;
+        padding: 4vmin;
+        border-radius: 3vmin;
+        background-color: rgba(128, 128, 128, 0.1);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module">
+      <!-- MODULE -->
+    </script>
+  </body>
+</html>
