@@ -162,6 +162,13 @@ const App = () => {
       .then((x) => x.json())
       .then((x) => setLibrary(x.items));
   }, []);
+  useEffect(() => {
+    if (location.hash) {
+      const current = location.hash;
+      history.replaceState(null, "", "#/");
+      history.pushState(null, "", current);
+    }
+  }, []);
   return (
     <Switch>
       <Route path="/Series">
