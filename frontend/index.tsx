@@ -39,15 +39,15 @@ const isEpisode = (x: Item): x is Item & { meta: EpisodeMeta } =>
 const isFilm = (x: Item): x is Item & { meta: FilmMeta } =>
   "title" in x.meta && !("show" in x.meta);
 
-const currentLocation = () => window.location.hash.replace(/^#/, "") || "/";
-const navigate = (to: string) => (window.location.hash = to);
+const currentLocation = () => self.location.hash.replace(/^#/, "") || "/";
+const navigate = (to: string) => (self.location.hash = to);
 
 const useHashLocation = (): [string, (path: string) => void] => {
   const [loc, setLoc] = useState(currentLocation());
   useEffect(() => {
     const handler = () => setLoc(currentLocation());
-    window.addEventListener("hashchange", handler);
-    return () => window.removeEventListener("hashchange", handler);
+    self.addEventListener("hashchange", handler);
+    return () => self.removeEventListener("hashchange", handler);
   }, []);
   return [loc, navigate];
 };
