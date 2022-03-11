@@ -25,7 +25,7 @@ interface FilmMeta {
 }
 
 type Item = {
-  meta: {} | FilmMeta | EpisodeMeta | MusicMeta;
+  meta: Record<never, never> | FilmMeta | EpisodeMeta | MusicMeta;
   path: string;
   type: ("music" | "video" | "subtitle")[];
 };
