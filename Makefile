@@ -17,3 +17,17 @@ uninstall:
 	rm -f "${DESTDIR}${PREFIX}/bin/ump" \
 	rm -f "${DESTDIR}${PREFIX}/bin/yt_title_clean" \
 	rm -f "${DESTDIR}${PREFIX}/bin/tv"
+
+frontend/dist/index.html: frontend/index.html frontend/index.tsx \
+		Makefile frontend/deps/preact.ts frontend/deps/wouter-preact.ts
+	mkdir -p frontend/dist
+	deno bundle --config=frontend/deno.json frontend/index.tsx \
+		>frontend/dist/index.js
+	<frontend/index.html awk '\
+		/<!-- MODULE -->/ { \
+			while (getline <"frontend/dist/index.js") print; \
+			next; \
+		} \
+		{ print $$0; } \
+	' >frontend/dist/index.html
+	rm frontend/dist/index.js
