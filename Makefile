@@ -1,6 +1,5 @@
 .POSIX:
-.SILENT:
-.PHONY: install uninstall
+.PHONY: install uninstall format
 
 install: ump.sh yt_title_clean.sh
 	awk '/^\. / { f=$$2; while (getline < f) print; next; } { print; }' \
@@ -17,6 +16,10 @@ uninstall:
 	rm -f "${DESTDIR}${PREFIX}/bin/ump" \
 	rm -f "${DESTDIR}${PREFIX}/bin/yt_title_clean" \
 	rm -f "${DESTDIR}${PREFIX}/bin/tv"
+
+format:
+	npx prettier --print-width 79 --write '**/*.{ts,tsx,html}'
+	deno fmt
 
 frontend/dist/index.html: frontend/index.html frontend/index.tsx \
 		Makefile frontend/deps/preact.ts frontend/deps/wouter-preact.ts
