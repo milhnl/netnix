@@ -157,6 +157,43 @@
       div#files > *:nth-child(even) {
         background-color: rgba(128, 128, 128, 0.1);
       }
+      div#settings {
+        padding: 0.5em var(--header-height);
+      }
+      div#settings label {
+        margin-bottom: 0.5em;
+        font-size: 2rem;
+      }
+      div#settings
+        :is(input[type="text"], input[type="password"], select, button) {
+        display: block;
+        box-sizing: border-box;
+        margin-bottom: 1.5em;
+        height: 44px;
+        padding: 0 1em;
+        width: 100%;
+        font-size: 1.6rem;
+      }
+      @keyframes onAutoFillStart {
+        from {
+        }
+        to {
+        }
+      }
+      @keyframes onAutoFillCancel {
+        from {
+        }
+        to {
+        }
+      }
+      div#settings input[autocomplete="current-password"]:-webkit-autofill {
+        animation-name: onAutoFillStart;
+        transition: background-color 0.01s ease-in-out 0s;
+      }
+      div#settings
+        input[autocomplete="current-password"]:not(:-webkit-autofill) {
+        animation-name: onAutoFillCancel;
+      }
       a.nodefault {
         font-size: 1.8rem;
         line-height: 1.3;

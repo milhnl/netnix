@@ -3,10 +3,12 @@ import {
   FunctionComponent as FC,
   h,
   render,
+  StateUpdater,
   useEffect,
   useState,
 } from "./deps/preact.ts";
 import { Link, Route, Router, Switch } from "./deps/wouter-preact.ts";
+import { Auth, getAuthHeader, Login } from "./auth.tsx";
 
 interface EpisodeMeta {
   show: string;
@@ -59,8 +61,17 @@ const isMobile = isIOS || isAndroid;
 
 const encodeURIAll = (x: string) =>
   encodeURIComponent(x).replace(/[!'()*]/g, escape);
-const asURL = (path: string) =>
-  location.href.replace(location.hash, "").replace(/\/[^\/]*$/, "/") + path;
+const asURL = (path: string, auth: Auth) => {
+  const url = new URL(
+    path,
+    location.href.replace(location.hash, "").replace(/\/[^\/]*$/, "/"),
+  );
+  if (auth.type == "http") {
+    url.username = auth.username;
+    url.password = auth.password;
+  }
+  return url.toString();
+};
 
 const playerAppURL = isIOS
   ? "https://apps.apple.com/us/app/vlc-for-mobile/id650377962"
@@ -68,16 +79,20 @@ const playerAppURL = isIOS
   ? "https://play.google.com/store/apps/details?id=org.videolan.vlc"
   : undefined;
 
-const asPlayableURL = (path: string, subtitle: string | undefined) =>
+const asPlayableURL = (
+  path: string,
+  subtitle: string | undefined,
+  auth: Auth,
+) =>
   isAndroid
-    ? "vlc://" + asURL(path)
+    ? "vlc://" + asURL(path, auth)
     : isIOS
     ? `vlc-x-callback://x-callback-url/stream?url=${
       encodeURIAll(
-        asURL(path),
+        asURL(path, auth),
       )
-    }${subtitle ? `&sub=${encodeURIAll(asURL(subtitle))}` : ""}`
-    : asURL(path);
+    }${subtitle ? `&sub=${encodeURIAll(asURL(subtitle, auth))}` : ""}`
+    : asURL(path, auth);
 
 const getSubtitle = (library: Item[], item: Item) =>
   (
@@ -111,30 +126,44 @@ const File = ({
   name,
   path,
   subtitle,
+  auth,
 }: {
   name: string;
   path: string;
   subtitle: string | undefined;
+  auth: Auth;
 }) => (
   <a
     className="nodefault"
     href={path.match(/\.(mkv|webm|mp4|m4v)$/)
-      ? asPlayableURL(path, subtitle)
+      ? asPlayableURL(path, subtitle, auth)
       : path}
   >
     {isMobile ? name.replace(/\.[a-z0-9]+$/, "") : name}
   </a>
 );
-const Directory = ({ name, path }: { name: string; path: string }) => (
+
+const Directory = ({
+  name,
+  path,
+  auth,
+}: {
+  name: string;
+  path: string;
+  auth: Auth;
+}) => (
   <Link to={path}>
     <a
       className="nodefault"
-      style={{ backgroundImage: `url(${path}/folder.jpg)` }}
+      style={{
+        backgroundImage: `url(${asURL(path + "/folder.jpg", auth)})`,
+      }}
     >
       <span>{name}</span>
     </a>
   </Link>
 );
+
 const Chrome: FC<{ name: string }> = ({ name, children }) => (
   <>
     <header>
@@ -155,13 +184,25 @@ const Chrome: FC<{ name: string }> = ({ name, children }) => (
     <main>{children}</main>
   </>
 );
+
 const App = () => {
+  const [auth, setAuth] = useState<Auth>({ type: "unknown" });
   const [library, setLibrary] = useState([] as Item[]);
   useEffect(() => {
-    fetch(asURL(".ump-library.json"))
-      .then((x) => x.json())
-      .then((x) => setLibrary(x.items));
-  }, []);
+    if (auth.type === "http" || auth.type === "none") {
+      fetch(asURL(".ump-library.json", { type: "none" }), {
+        headers: getAuthHeader(auth),
+      })
+        .then((x) => {
+          if (x.ok) return x.json();
+          else {
+            setAuth({ type: "unknown" });
+            return { items: [] };
+          }
+        })
+        .then((x) => setLibrary(x.items));
+    }
+  }, [auth]);
   useEffect(() => {
     if (location.hash) {
       const current = location.hash;
@@ -169,6 +210,15 @@ const App = () => {
       history.pushState(null, "", current);
     }
   }, []);
+  if (auth.type !== "http" && auth.type !== "none") {
+    return (
+      <Login
+        checkURL={asURL(".ump-library.json", { type: "none" })}
+        auth={auth}
+        setAuth={setAuth}
+      />
+    );
+  }
   return (
     <Switch>
       <Route path="/Series">
@@ -184,7 +234,11 @@ const App = () => {
                 )
                 .sort((a, b) => a.localeCompare(b))
                 .map((x) => (
-                  <Directory name={x} path={"/Series/" + encodeURIAll(x)} />
+                  <Directory
+                    name={x}
+                    path={"/Series/" + encodeURIAll(x)}
+                    auth={auth}
+                  />
                 ))}
             </div>
           </Chrome>
@@ -212,6 +266,7 @@ const App = () => {
                       x.meta.title}
                     path={encodeURI(x.path)}
                     subtitle={getSubtitle(library, x)}
+                    auth={auth}
                   />
                 ))}
             </div>
@@ -231,6 +286,7 @@ const App = () => {
                     name={x.meta.title}
                     path={encodeURI(x.path)}
                     subtitle={getSubtitle(library, x)}
+                    auth={auth}
                   />
                 ))}
             </div>
@@ -241,8 +297,8 @@ const App = () => {
         {() => (
           <Chrome name="Netnix">
             <div id="directories">
-              <Directory name="Series" path="/Series" />
-              <Directory name="Films" path="/Films" />
+              <Directory name="Series" path="/Series" auth={auth} />
+              <Directory name="Films" path="/Films" auth={auth} />
             </div>
             {isMobile && (
               <p>

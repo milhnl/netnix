@@ -21,8 +21,9 @@ format:
 	npx prettier --print-width 79 --write '**/*.{ts,tsx,html}'
 	deno fmt
 
-frontend/dist/index.html: frontend/index.html frontend/index.tsx \
-		Makefile frontend/deps/preact.ts frontend/deps/wouter-preact.ts
+frontend/dist/index.html: Makefile frontend/index.html frontend/index.tsx \
+		frontend/auth.tsx frontend/deps/preact.ts \
+		frontend/deps/wouter-preact.ts
 	mkdir -p frontend/dist
 	deno bundle --config=frontend/deno.json frontend/index.tsx \
 		>frontend/dist/index.js
