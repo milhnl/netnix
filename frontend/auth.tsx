@@ -1,4 +1,5 @@
 import { h, StateUpdater, useCallback, useEffect } from "./deps/preact.ts";
+import { createGlobalStyles, css, styled } from "./deps/goober.ts";
 
 export type Auth =
   | {
@@ -52,6 +53,44 @@ export const tryAuthenticate = (
   }
 };
 
+const Main = styled("main")`
+  margin: var(--header-height);
+`;
+
+const Label = styled("label")`
+  margin-bottom: 0.5em;
+  font-size: 2rem;
+`;
+
+const inputClassname = css`
+  display: block;
+  box-sizing: border-box;
+  margin-bottom: 1.5em;
+  height: 44px;
+  padding: 0 1em;
+  width: 100%;
+  font-size: 1.6rem;
+  @keyframes onAutoFillStart {
+    from {
+    }
+    to {
+    }
+  }
+  @keyframes onAutoFillCancel {
+    from {
+    }
+    to {
+    }
+  }
+  &[autocomplete="current-password"]:-webkit-autofill {
+    animation-name: onAutoFillStart;
+    transition: background-color 0.01s ease-in-out 0s;
+  }
+  &[autocomplete="current-password"]:not(:-webkit-autofill) {
+    animation-name: onAutoFillCancel;
+  }
+`;
+
 export const Login = ({
   checkURL,
   auth,
@@ -85,9 +124,10 @@ export const Login = ({
   useEffect(() => tryAuthenticate(checkURL, auth, setAuth), []);
   return "username" in auth
     ? (
-      <div id="settings">
-        <label for="username">Username</label>
+      <Main>
+        <Label for="username">Username</Label>
         <input
+          className={inputClassname}
           type="text"
           value={auth.username}
           autofocus
@@ -99,8 +139,9 @@ export const Login = ({
               password: withCurrentValue("password", auth),
             }))}
         />
-        <label for="password">Password</label>
+        <Label for="password">Password</Label>
         <input
+          className={inputClassname}
           ref={ref}
           type="password"
           value={auth.password}
@@ -114,12 +155,13 @@ export const Login = ({
         />
         <button
           type="submit"
+          className={inputClassname}
           disabled={auth.username === "" || auth.password === ""}
           onClick={() => tryAuthenticate(checkURL, auth, setAuth)}
         >
           Log in
         </button>
-      </div>
+      </Main>
     )
     : <span>loading</span>;
 };

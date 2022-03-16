@@ -8,7 +8,9 @@ import {
   useState,
 } from "./deps/preact.ts";
 import { Link, Route, Router, Switch } from "./deps/wouter-preact.ts";
+import { setup, styled } from "./deps/goober.ts";
 import { Auth, getAuthHeader, Login } from "./auth.tsx";
+import { Chrome } from "./chrome.tsx";
 
 interface EpisodeMeta {
   show: string;
@@ -122,6 +124,21 @@ const getSubtitle = (library: Item[], item: Item) =>
     )
     .map((x) => encodeURI(x.path))[0];
 
+const FileContainer = styled("div")`
+  display: flex;
+  flex-direction: column;
+  & > * {
+    padding: 0.5em 1em;
+    font-size: 1.8rem;
+    line-height: 1.3;
+    color: inherit;
+    text-decoration: none;
+  }
+  & > *:nth-child(even) {
+    background-color: rgba(128, 128, 128, 0.1);
+  }
+`;
+
 const File = ({
   name,
   path,
@@ -142,6 +159,53 @@ const File = ({
     {isMobile ? name.replace(/\.[a-z0-9]+$/, "") : name}
   </a>
 );
+
+const DirectoryContainer = styled("div")`
+  @media (min-width: 1000px) {
+    --item-size: 20vw;
+  }
+  @media (max-width: 1000px) {
+    --item-size: 25vw;
+  }
+  @media (max-width: 800px) {
+    --item-size: 33.33vw;
+  }
+  @media (max-width: 600px) {
+    --item-size: 50vw;
+  }
+  @media (max-width: 200px) {
+    --item-size: 100vw;
+  }
+  display: flex;
+  flex-wrap: wrap;
+  & > * {
+    cursor: pointer;
+    width: var(--item-size);
+    height: var(--item-size);
+    background-color: rgba(128, 128, 128, 0.1);
+    background-size: cover;
+    background-position: center;
+    display: grid;
+    align-items: end;
+    justify-items: stretch;
+  }
+  & > * > span {
+    padding: 0.2em 0.5em;
+    background-color: rgba(0, 0, 0, 0.75);
+    text-align: center;
+  }
+  @media (prefers-color-scheme: light) {
+    & > * > span {
+      color: white;
+    }
+  }
+  a.nodefault {
+    font-size: 1.8rem;
+    line-height: 1.3;
+    color: inherit;
+    text-decoration: none;
+  }
+`;
 
 const Directory = ({
   name,
@@ -164,26 +228,13 @@ const Directory = ({
   </Link>
 );
 
-const Chrome: FC<{ name: string }> = ({ name, children }) => (
-  <>
-    <header>
-      {location.hash && (
-        <a className="nodefault" onClick={() => history.back()}>
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 5 10">
-            <polyline
-              points="4,2 1,5 4,8"
-              stroke="blue"
-              stroke-linecap="round"
-              fill="none"
-            />
-          </svg>
-        </a>
-      )}
-      <span>{name}</span>
-    </header>
-    <main>{children}</main>
-  </>
-);
+const Message = styled("p")`
+  margin: 4vmin;
+  padding: 4vmin;
+  border-radius: 3vmin;
+  background-color: rgba(128, 128, 128, 0.1);
+  font-size: 1.6rem;
+`;
 
 const App = () => {
   const [auth, setAuth] = useState<Auth>({ type: "unknown" });
@@ -224,7 +275,7 @@ const App = () => {
       <Route path="/Series">
         {() => (
           <Chrome name="Series">
-            <div id="directories">
+            <DirectoryContainer>
               {library
                 .filter(isEpisode)
                 .filter((x) => x.type.includes("video"))
@@ -240,14 +291,14 @@ const App = () => {
                     auth={auth}
                   />
                 ))}
-            </div>
+            </DirectoryContainer>
           </Chrome>
         )}
       </Route>
       <Route path="/Series/:name+">
         {({ name }: { name: string }) => (
           <Chrome name={decodeURIComponent(name)}>
-            <div id="files">
+            <FileContainer>
               {library
                 .filter(isEpisode)
                 .filter(
@@ -269,14 +320,14 @@ const App = () => {
                     auth={auth}
                   />
                 ))}
-            </div>
+            </FileContainer>
           </Chrome>
         )}
       </Route>
       <Route path="/Films">
         {() => (
           <Chrome name="Films">
-            <div id="files">
+            <FileContainer>
               {library
                 .filter(isFilm)
                 .filter((x) => x.type.length == 1 && x.type[0] === "video")
@@ -289,24 +340,24 @@ const App = () => {
                     auth={auth}
                   />
                 ))}
-            </div>
+            </FileContainer>
           </Chrome>
         )}
       </Route>
       <Route>
         {() => (
           <Chrome name="Netnix">
-            <div id="directories">
+            <DirectoryContainer>
               <Directory name="Series" path="/Series" auth={auth} />
               <Directory name="Films" path="/Films" auth={auth} />
-            </div>
+            </DirectoryContainer>
             {isMobile && (
-              <p>
+              <Message>
                 You will need VLC player installed on your phone to actually
                 play the video files on this server. You can download it at the
                 {" "}
                 <a href={playerAppURL}>{isIOS ? "App Store" : "Play Store"}</a>
-              </p>
+              </Message>
             )}
           </Chrome>
         )}
@@ -315,6 +366,7 @@ const App = () => {
   );
 };
 
+setup(h);
 render(
   <Router hook={useHashLocation}>
     <App />
