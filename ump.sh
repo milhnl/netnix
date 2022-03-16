@@ -320,7 +320,7 @@ ump_youtube_download() {
         --default-search ytsearch \
         --download-archive "$UMP_DOWNLOADS/.ytdl-archive" \
         --write-info-json --add-metadata \
-        -o "$UMP_DOWNLOADS/.ytdl-tmp-$2-%(autonumber)s.%(ext)s" "$1" >&2
+        -o "$UMP_DOWNLOADS/.ytdl-tmp-$2-%(playlist_index)s.%(ext)s" "$1" >&2
     for json in "$UMP_DOWNLOADS/.ytdl-tmp-$2"-*.info.json; do
         video="$(ump_youtube_find_ext "${json%%.info.json}")" || return 1
         ump_youtube_move_file "$video" "$json"
