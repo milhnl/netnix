@@ -24,6 +24,10 @@ interface FilmMeta {
   language?: string;
 }
 
+interface Settings {
+  sublang: string;
+}
+
 type Item = {
   meta: Record<never, never> | FilmMeta | EpisodeMeta | MusicMeta;
   path: string;
@@ -50,6 +54,24 @@ const useHashLocation = (): [string, (path: string) => void] => {
     return () => self.removeEventListener("hashchange", handler);
   }, []);
   return [loc, navigate];
+};
+
+export const useLocalStorage = <T,>(key: string, initialValue: T) => {
+  const [value, setValue] = useState(() => {
+    const value = localStorage.getItem(key);
+    return value !== null ? JSON.parse(value) : initialValue;
+  });
+  self.addEventListener(
+    "storage",
+    (e) =>
+      e.key === key &&
+      setValue(e.newValue != null ? JSON.parse(e.newValue) : initialValue),
+  );
+  useEffect(
+    () => localStorage.setItem(key, JSON.stringify(value)),
+    [key, value],
+  );
+  return [value, setValue];
 };
 
 const isAndroid = /(android)/i.test(navigator.userAgent);
@@ -79,7 +101,7 @@ const asPlayableURL = (path: string, subtitle: string | undefined) =>
     }${subtitle ? `&sub=${encodeURIAll(asURL(subtitle))}` : ""}`
     : asURL(path);
 
-const getSubtitle = (library: Item[], item: Item) =>
+const getSubtitle = (library: Item[], item: Item, settings: Settings) =>
   (
     (isEpisode(item)
       ? library.filter(
@@ -101,9 +123,13 @@ const getSubtitle = (library: Item[], item: Item) =>
   )
     .sort(
       (a, b) =>
-        ([a.meta.language, null, b.meta.language].findIndex(
-              (x) => x === "en",
-            ) + 1 || 2) - 2,
+        (([a.meta.language, null, b.meta.language].findIndex(
+          (x) => x === settings.sublang,
+        ) + 1) ||
+          ([a.meta.language, null, b.meta.language].findIndex(
+            (x) => x === "en",
+          ) + 1) ||
+          2) - 2,
     )
     .map((x) => encodeURI(x.path))[0];
 
@@ -139,7 +165,11 @@ const Chrome: FC<{ name: string }> = ({ name, children }) => (
   <>
     <header>
       {location.hash && (
-        <a className="nodefault" onClick={() => history.back()}>
+        <a
+          className="nodefault"
+          style={{ left: 0 }}
+          onClick={() => history.back()}
+        >
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 5 10">
             <polyline
               points="4,2 1,5 4,8"
@@ -151,11 +181,17 @@ const Chrome: FC<{ name: string }> = ({ name, children }) => (
         </a>
       )}
       <span>{name}</span>
+      <Link className="nodefault" style={{ right: 0 }} to="/Settings">
+        S
+      </Link>
     </header>
     <main>{children}</main>
   </>
 );
 const App = () => {
+  const [settings, setSettings] = useLocalStorage<Settings>("settings", {
+    sublang: "en",
+  });
   const [library, setLibrary] = useState([] as Item[]);
   useEffect(() => {
     fetch(asURL(".ump-library.json"))
@@ -211,7 +247,7 @@ const App = () => {
                     name={x.meta.season + "." + x.meta.episode + " " +
                       x.meta.title}
                     path={encodeURI(x.path)}
-                    subtitle={getSubtitle(library, x)}
+                    subtitle={getSubtitle(library, x, settings)}
                   />
                 ))}
             </div>
@@ -230,9 +266,53 @@ const App = () => {
                   <File
                     name={x.meta.title}
                     path={encodeURI(x.path)}
-                    subtitle={getSubtitle(library, x)}
+                    subtitle={getSubtitle(library, x, settings)}
                   />
                 ))}
+            </div>
+          </Chrome>
+        )}
+      </Route>
+      <Route path="/Settings">
+        {() => (
+          <Chrome name="Settings">
+            <div id="settings">
+              <label>Authentication method</label>
+              <label class="toggle">
+                <input
+                  id="auth-http"
+                  type="radio"
+                  name="auth"
+                  value="http"
+                  checked={settings.auth == "http"}
+                  onClick={(e) =>
+                    setSettings((x: Settings) => ({
+                      ...x,
+                      auth: (e.target as HTMLInputElement).value,
+                    }))}
+                />
+                <span>Username/password</span>
+              </label>
+              <label class="toggle">
+                <input
+                  id="auth-none"
+                  type="radio"
+                  name="auth"
+                  value="none"
+                  checked={settings.auth == "none"}
+                  onClick={(e) =>
+                    setSettings((x: Settings) => ({
+                      ...x,
+                      auth: (e.target as HTMLInputElement).value,
+                    }))}
+                />
+                <span>None (or IP-based)</span>
+              </label>
+              <label for="sublang">Preferred subtitle language</label>
+              <select id="sublang" value={settings.sublang}>
+                <option value="en">English</option>
+                <option value="nl">Dutch</option>
+              </select>
             </div>
           </Chrome>
         )}
