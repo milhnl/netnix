@@ -229,7 +229,7 @@ const Directory = ({
 );
 
 const Message = styled("p")`
-  margin: 4vmin;
+  margin: var(--header-height);
   padding: 4vmin;
   border-radius: 3vmin;
   background-color: rgba(128, 128, 128, 0.1);
@@ -263,11 +263,20 @@ const App = () => {
   }, []);
   if (auth.type !== "http" && auth.type !== "none") {
     return (
-      <Login
-        checkURL={asURL(".ump-library.json", { type: "none" })}
-        auth={auth}
-        setAuth={setAuth}
-      />
+      <>
+        <Login
+          checkURL={asURL(".ump-library.json", { type: "none" })}
+          auth={auth}
+          setAuth={setAuth}
+        />
+        {isMobile && (
+          <Message>
+            You will need VLC player installed on your phone to actually play
+            the video files on this server. You can download it at the{" "}
+            <a href={playerAppURL}>{isIOS ? "App Store" : "Play Store"}</a>
+          </Message>
+        )}
+      </>
     );
   }
   return (
@@ -351,14 +360,6 @@ const App = () => {
               <Directory name="Series" path="/Series" auth={auth} />
               <Directory name="Films" path="/Films" auth={auth} />
             </DirectoryContainer>
-            {isMobile && (
-              <Message>
-                You will need VLC player installed on your phone to actually
-                play the video files on this server. You can download it at the
-                {" "}
-                <a href={playerAppURL}>{isIOS ? "App Store" : "Play Store"}</a>
-              </Message>
-            )}
           </Chrome>
         )}
       </Route>
