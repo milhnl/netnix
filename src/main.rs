@@ -1,6 +1,12 @@
 use directories::ProjectDirs;
-use serde::Serialize;
+use id3::{Tag as Id3Tag, TagLike};
+use lazy_static::lazy_static;
+use metaflac::Tag as FlacTag;
+use regex::Regex;
+use serde::{Deserialize, Serialize};
 use std::env;
+use std::fs::File;
+use std::io::BufReader;
 use std::path::{Component, Path, PathBuf};
 use walkdir::WalkDir;
 
@@ -12,15 +18,58 @@ enum FileType {
 }
 
 #[derive(Serialize)]
-struct Library {
-    version: u8,
-    items: Vec<Item>,
+#[serde(untagged)]
+enum Metadata {
+    Music {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        artist: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        album: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        title: Option<String>,
+    },
+    Film {
+        title: String,
+    },
+    Episode {
+        show: Option<String>,
+        title: Option<String>,
+        season: Option<String>,
+        episode: Option<String>,
+        language: Option<String>,
+    },
+    Unknown {},
 }
 
 #[derive(Serialize)]
 struct Item {
     path: PathBuf,
     r#type: Vec<String>,
+    meta: Metadata,
+}
+
+#[derive(Serialize)]
+struct Library {
+    version: u8,
+    items: Vec<Item>,
+}
+
+#[derive(Deserialize)]
+struct YoutubeDl {
+    categories: Vec<String>,
+    title: String,
+    artist: Option<String>,
+    album: Option<String>,
+    track: Option<String>,
+}
+
+fn info_json_exists(path: &Path) -> Option<YoutubeDl> {
+    let path = path
+        .parent()?
+        .join(".".to_string() + path.file_stem()?.to_str()? + ".info.json");
+    let file = File::open(path).ok()?;
+    let reader = BufReader::new(file);
+    serde_json::from_reader(reader).ok()
 }
 
 fn get_video_type_from_path(path: &Path) -> FileType {
@@ -38,7 +87,7 @@ fn get_video_type_from_path(path: &Path) -> FileType {
                     .as_str()
                 {
                     "tv" | "series" | "tv series" => Some(FileType::Episode),
-                    "music" | "yt-lib" => Some(FileType::Music),
+                    "music" => Some(FileType::Music),
                     "films" | "movies" => Some(FileType::Film),
                     _ => None,
                 }
@@ -49,39 +98,170 @@ fn get_video_type_from_path(path: &Path) -> FileType {
         .unwrap_or(FileType::Unknown)
 }
 
+fn parse_song_title(fulltitle: &str) -> (Option<String>, Option<String>) {
+    lazy_static! {
+        static ref WORKABLE: Regex = Regex::new(" - ").unwrap();
+        static ref EXTRACT: Regex = Regex::new("(.*) - (.*)").unwrap();
+    };
+    (WORKABLE.find_iter(fulltitle).count() == 1)
+        .then(|| EXTRACT.captures_iter(fulltitle).next())
+        .flatten()
+        .map_or((None, None), |cap| {
+            (Some((&cap[1]).to_string()), Some((&cap[2]).to_string()))
+        })
+}
+
+fn parse_episode_title(path: &Path) -> Metadata {
+    lazy_static! {
+        static ref EXTRACT: Regex = Regex::new(concat!(
+            r"(?:[Ss](?P<s1>[[:digit:]]{2})[Ee](?P<e1>[[:digit:]]{2}))|",
+            r"(?:(?P<s2>[[:digit:]]{2})[Xx](?P<e2>[[:digit:]]{2}))|",
+            r"(?:(?P<s3>[[:digit:]]{2})\.(?P<e3>[[:digit:]]{2}))",
+            r" ?(?P<title>.*)"
+        ))
+        .unwrap();
+    };
+    let (language, stem) =
+        if path.extension().and_then(|x| x.to_str()) == Some("srt") {
+            (
+                path.file_stem().and_then(|x| {
+                    Some(Path::new(x).extension()?.to_str()?.to_string())
+                }),
+                path.file_stem().map(Path::new),
+            )
+        } else {
+            (None, Some(path))
+        };
+    match stem.and_then(|stem| {
+        EXTRACT.captures_iter(stem.file_stem()?.to_str()?).next()
+    }) {
+        Some(cap) => Metadata::Episode {
+            show: path
+                .parent()
+                .and_then(|dir| dir.file_name()?.to_str())
+                .map(|x| x.to_string()),
+            season: cap
+                .name("s1")
+                .or_else(|| cap.name("s2"))
+                .or_else(|| cap.name("s3"))
+                .map(|x| x.as_str().to_string()),
+            episode: cap
+                .name("e1")
+                .or_else(|| cap.name("e2"))
+                .or_else(|| cap.name("e3"))
+                .map(|x| x.as_str().to_string()),
+            title: cap.name("title").map(|x| x.as_str().to_string()),
+            language,
+        },
+        _ => Metadata::Unknown {},
+    }
+}
+
 fn get_type(path: PathBuf) -> Option<Item> {
     match path.extension()?.to_str()? {
-        "aac" | "flac" | "mp3" | "wav" => Some(Item {
+        "aac" => Some(Item {
             path,
             r#type: vec!["music".to_string()],
+            meta: Metadata::Unknown {},
         }),
-        "mkv" | "mp4" | "webm"
-            if matches!(get_video_type_from_path(&path), FileType::Music) =>
-        {
+        "flac" => {
+            let tag = FlacTag::read_from_path(&path).ok()?;
+            let meta = Metadata::Music {
+                artist: Some(tag.get_vorbis("artist")?.next()?.to_string()),
+                album: Some(tag.get_vorbis("album")?.next()?.to_string()),
+                title: Some(tag.get_vorbis("title")?.next()?.to_string()),
+            };
             Some(Item {
                 path,
-                r#type: vec!["music".to_string(), "video".to_string()],
+                r#type: vec!["music".to_string()],
+                meta,
             })
         }
-        "mkv" | "mp4" | "webm"
-            if matches!(get_video_type_from_path(&path), FileType::Film) =>
-        {
+        "mp3" => {
+            let tag = Id3Tag::read_from_path(&path).ok()?;
             Some(Item {
                 path,
-                r#type: vec!["video".to_string()],
+                r#type: vec!["music".to_string()],
+                meta: Metadata::Music {
+                    artist: Some(tag.artist()?.to_string()),
+                    album: Some(tag.album()?.to_string()),
+                    title: Some(tag.title()?.to_string()),
+                },
             })
         }
-        "mkv" | "mp4" | "webm"
-            if matches!(
-                get_video_type_from_path(&path),
-                FileType::Episode
-            ) =>
-        {
-            Some(Item {
-                path,
-                r#type: vec!["video".to_string()],
-            })
-        }
+        "wav" => Some(Item {
+            path,
+            r#type: vec!["music".to_string()],
+            meta: Metadata::Unknown {},
+        }),
+        "mkv" | "mp4" | "webm" => match info_json_exists(&path) {
+            Some(yt_json)
+                if yt_json.categories.iter().any(|x| x == "Music") =>
+            {
+                let (artist, title) = match (yt_json.artist, yt_json.track) {
+                    (Some(artist), Some(title)) => (Some(artist), Some(title)),
+                    (_, _) => parse_song_title(&yt_json.title),
+                };
+                Some(Item {
+                    path,
+                    r#type: vec!["music".to_string(), "video".to_string()],
+                    meta: Metadata::Music {
+                        artist,
+                        album: yt_json.album,
+                        title,
+                    },
+                })
+            }
+            _ => match get_video_type_from_path(&path) {
+                FileType::Music => Some(Item {
+                    path: path.clone(),
+                    r#type: vec!["music".to_string(), "video".to_string()],
+                    meta: {
+                        let (artist, title) =
+                            match path.file_stem().and_then(|x| x.to_str()) {
+                                Some(fulltitle) => parse_song_title(fulltitle),
+                                _ => (None, None),
+                            };
+                        Metadata::Music {
+                            artist,
+                            album: None,
+                            title,
+                        }
+                    },
+                }),
+                FileType::Film => Some(Item {
+                    path: path.clone(),
+                    r#type: vec!["video".to_string()],
+                    meta: Metadata::Film {
+                        title: path.file_stem()?.to_str()?.to_string(),
+                    },
+                }),
+                FileType::Episode => Some(Item {
+                    path: path.clone(),
+                    r#type: vec!["video".to_string()],
+                    meta: parse_episode_title(&path),
+                }),
+                FileType::Unknown => {
+                    eprintln!("Skipping, type unknown: {}", path.to_str()?);
+                    None
+                }
+            },
+        },
+        "srt" => match get_video_type_from_path(&path) {
+            FileType::Film => Some(Item {
+                path: path.clone(),
+                r#type: vec!["subtitle".to_string()],
+                meta: Metadata::Film {
+                    title: path.file_stem()?.to_str()?.to_string(),
+                },
+            }),
+            FileType::Episode => Some(Item {
+                path: path.clone(),
+                r#type: vec!["subtitle".to_string()],
+                meta: parse_episode_title(&path),
+            }),
+            _ => None,
+        },
         _ => None,
     }
 }
