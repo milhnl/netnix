@@ -56,7 +56,11 @@ const HeaderLink = styled("a")`
   }
 `;
 
-export const Chrome: FC<{ name: string }> = ({ name, children }) => (
+export const Chrome: FC<{ name: string; className?: string }> = ({
+  name,
+  className,
+  children,
+}) => (
   <>
     <RootChromeStyle />
     <Header>
@@ -74,6 +78,6 @@ export const Chrome: FC<{ name: string }> = ({ name, children }) => (
       )}
       <span>{name}</span>
     </Header>
-    <main>{children}</main>
+    <main className={className}>{children}</main>
   </>
 );

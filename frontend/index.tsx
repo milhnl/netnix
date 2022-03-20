@@ -236,6 +236,27 @@ const Message = styled("p")`
   font-size: 1.6rem;
 `;
 
+const MainContainer = styled("div")`
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - var(--header-height));
+  @supports (-webkit-touch-callout: none) {
+    min-height: initial;
+  }
+  & > a {
+    flex-grow: 1;
+    font-size: 10vh;
+    color: inherit;
+    text-decoration: none;
+    display: grid;
+    align-items: center;
+    justify-items: center;
+  }
+  & > a:nth-child(odd) {
+    background-color: rgba(128, 128, 128, 0.1);
+  }
+`;
+
 const App = () => {
   const [auth, setAuth] = useState<Auth>({ type: "unknown" });
   const [library, setLibrary] = useState([] as Item[]);
@@ -283,84 +304,80 @@ const App = () => {
     <Switch>
       <Route path="/Series">
         {() => (
-          <Chrome name="Series">
-            <DirectoryContainer>
-              {library
-                .filter(isEpisode)
-                .filter((x) => x.type.includes("video"))
-                .reduce(
-                  (a, n) => a.includes(n.meta.show) ? a : [...a, n.meta.show],
-                  [] as string[],
-                )
-                .sort((a, b) => a.localeCompare(b))
-                .map((x) => (
-                  <Directory
-                    name={x}
-                    path={"/Series/" + encodeURIAll(x)}
-                    auth={auth}
-                  />
-                ))}
-            </DirectoryContainer>
-          </Chrome>
+          <DirectoryContainer as={Chrome} name="Series">
+            {library
+              .filter(isEpisode)
+              .filter((x) => x.type.includes("video"))
+              .reduce(
+                (a, n) => (a.includes(n.meta.show) ? a : [...a, n.meta.show]),
+                [] as string[],
+              )
+              .sort((a, b) => a.localeCompare(b))
+              .map((x) => (
+                <Directory
+                  name={x}
+                  path={"/Series/" + encodeURIAll(x)}
+                  auth={auth}
+                />
+              ))}
+          </DirectoryContainer>
         )}
       </Route>
       <Route path="/Series/:name+">
         {({ name }: { name: string }) => (
-          <Chrome name={decodeURIComponent(name)}>
-            <FileContainer>
-              {library
-                .filter(isEpisode)
-                .filter(
-                  (x) =>
-                    x.type.includes("video") &&
-                    x.meta.show == decodeURIComponent(name),
-                )
-                .sort(
-                  (a, b) =>
-                    a.meta.season.localeCompare(b.meta.season) ||
-                    a.meta.episode.localeCompare(b.meta.episode),
-                )
-                .map((x) => (
-                  <File
-                    name={x.meta.season + "." + x.meta.episode + " " +
-                      x.meta.title}
-                    path={encodeURI(x.path)}
-                    subtitle={getSubtitle(library, x)}
-                    auth={auth}
-                  />
-                ))}
-            </FileContainer>
-          </Chrome>
+          <FileContainer as={Chrome} name={decodeURIComponent(name)}>
+            {library
+              .filter(isEpisode)
+              .filter(
+                (x) =>
+                  x.type.includes("video") &&
+                  x.meta.show == decodeURIComponent(name),
+              )
+              .sort(
+                (a, b) =>
+                  a.meta.season.localeCompare(b.meta.season) ||
+                  a.meta.episode.localeCompare(b.meta.episode),
+              )
+              .map((x) => (
+                <File
+                  name={x.meta.season + "." + x.meta.episode + " " +
+                    x.meta.title}
+                  path={encodeURI(x.path)}
+                  subtitle={getSubtitle(library, x)}
+                  auth={auth}
+                />
+              ))}
+          </FileContainer>
         )}
       </Route>
       <Route path="/Films">
         {() => (
-          <Chrome name="Films">
-            <FileContainer>
-              {library
-                .filter(isFilm)
-                .filter((x) => x.type.length == 1 && x.type[0] === "video")
-                .sort((a, b) => a.meta.title.localeCompare(b.meta.title))
-                .map((x) => (
-                  <File
-                    name={x.meta.title}
-                    path={encodeURI(x.path)}
-                    subtitle={getSubtitle(library, x)}
-                    auth={auth}
-                  />
-                ))}
-            </FileContainer>
-          </Chrome>
+          <FileContainer as={Chrome} name="Films">
+            {library
+              .filter(isFilm)
+              .filter((x) => x.type.length == 1 && x.type[0] === "video")
+              .sort((a, b) => a.meta.title.localeCompare(b.meta.title))
+              .map((x) => (
+                <File
+                  name={x.meta.title}
+                  path={encodeURI(x.path)}
+                  subtitle={getSubtitle(library, x)}
+                  auth={auth}
+                />
+              ))}
+          </FileContainer>
         )}
       </Route>
       <Route>
         {() => (
-          <Chrome name="Netnix">
-            <DirectoryContainer>
-              <Directory name="Series" path="/Series" auth={auth} />
-              <Directory name="Films" path="/Films" auth={auth} />
-            </DirectoryContainer>
-          </Chrome>
+          <MainContainer as={Chrome} name="Netnix">
+            <a href="#/Series">
+              <span>Series</span>
+            </a>
+            <a href="#/Films">
+              <span>Films</span>
+            </a>
+          </MainContainer>
         )}
       </Route>
     </Switch>
