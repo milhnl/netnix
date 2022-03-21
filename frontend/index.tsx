@@ -5,6 +5,7 @@ import {
   render,
   StateUpdater,
   useEffect,
+  useMemo,
   useState,
 } from "./deps/preact.ts";
 import { Link, Route, Router, Switch } from "./deps/wouter-preact.ts";
@@ -37,6 +38,10 @@ type Library = {
   version: number;
   items: Item[];
 };
+
+interface Player {
+  play: (item: Item) => void;
+}
 
 const isEpisode = (x: Item): x is Item & { meta: EpisodeMeta } =>
   "show" in x.meta;
@@ -139,24 +144,23 @@ const FileContainer = styled("div")`
   }
 `;
 
-const File = ({
-  name,
-  path,
-  subtitle,
-  auth,
+const Film = ({
+  item,
+  player,
 }: {
-  name: string;
-  path: string;
-  subtitle: string | undefined;
-  auth: Auth;
+  item: Item & { meta: FilmMeta };
+  player: Player;
+}) => <a onClick={() => player.play(item)}>{item.meta.title}</a>;
+
+const Episode = ({
+  item,
+  player,
+}: {
+  item: Item & { meta: EpisodeMeta };
+  player: Player;
 }) => (
-  <a
-    className="nodefault"
-    href={path.match(/\.(mkv|webm|mp4|m4v)$/)
-      ? asPlayableURL(path, subtitle, auth)
-      : path}
-  >
-    {isMobile ? name.replace(/\.[a-z0-9]+$/, "") : name}
+  <a onClick={() => player.play(item)}>
+    {item.meta.season + "." + item.meta.episode + " " + item.meta.title}
   </a>
 );
 
@@ -300,6 +304,16 @@ const App = () => {
       </>
     );
   }
+  const player = useMemo<Player>(
+    () => ({
+      play: (item) => (window.location.href = asPlayableURL(
+        encodeURI(item.path),
+        getSubtitle(library, item),
+        auth,
+      )),
+    }),
+    [library, auth],
+  );
   return (
     <Switch>
       <Route path="/Series">
@@ -338,15 +352,7 @@ const App = () => {
                   a.meta.season.localeCompare(b.meta.season) ||
                   a.meta.episode.localeCompare(b.meta.episode),
               )
-              .map((x) => (
-                <File
-                  name={x.meta.season + "." + x.meta.episode + " " +
-                    x.meta.title}
-                  path={encodeURI(x.path)}
-                  subtitle={getSubtitle(library, x)}
-                  auth={auth}
-                />
-              ))}
+              .map((x) => <Episode item={x} player={player} />)}
           </FileContainer>
         )}
       </Route>
@@ -357,14 +363,7 @@ const App = () => {
               .filter(isFilm)
               .filter((x) => x.type.length == 1 && x.type[0] === "video")
               .sort((a, b) => a.meta.title.localeCompare(b.meta.title))
-              .map((x) => (
-                <File
-                  name={x.meta.title}
-                  path={encodeURI(x.path)}
-                  subtitle={getSubtitle(library, x)}
-                  auth={auth}
-                />
-              ))}
+              .map((x) => <Film item={x} player={player} />)}
           </FileContainer>
         )}
       </Route>
