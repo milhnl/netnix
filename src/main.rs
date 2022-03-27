@@ -24,6 +24,8 @@ enum Metadata {
         #[serde(skip_serializing_if = "Option::is_none")]
         artist: Option<String>,
         #[serde(skip_serializing_if = "Option::is_none")]
+        albumartist: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
         album: Option<String>,
         #[serde(skip_serializing_if = "Option::is_none")]
         title: Option<String>,
@@ -168,6 +170,7 @@ fn get_type(path: PathBuf) -> Option<Item> {
             let tag = FlacTag::read_from_path(&path).ok()?;
             let meta = Metadata::Music {
                 artist: Some(tag.get_vorbis("artist")?.next()?.to_string()),
+                albumartist: Some(tag.get_vorbis("albumartist")?.next()?.to_string()),
                 album: Some(tag.get_vorbis("album")?.next()?.to_string()),
                 title: Some(tag.get_vorbis("title")?.next()?.to_string()),
             };
@@ -184,6 +187,7 @@ fn get_type(path: PathBuf) -> Option<Item> {
                 r#type: vec!["music".to_string()],
                 meta: Metadata::Music {
                     artist: Some(tag.artist()?.to_string()),
+                    albumartist: Some(tag.album_artist()?.to_string()),
                     album: Some(tag.album()?.to_string()),
                     title: Some(tag.title()?.to_string()),
                 },
@@ -198,6 +202,7 @@ fn get_type(path: PathBuf) -> Option<Item> {
             Some(yt_json)
                 if yt_json.categories.iter().any(|x| x == "Music") =>
             {
+                eprintln!("info json exists: {}", path.to_str()?);
                 let (artist, title) = match (yt_json.artist, yt_json.track) {
                     (Some(artist), Some(title)) => (Some(artist), Some(title)),
                     (_, _) => parse_song_title(&yt_json.title),
@@ -207,6 +212,7 @@ fn get_type(path: PathBuf) -> Option<Item> {
                     r#type: vec!["music".to_string(), "video".to_string()],
                     meta: Metadata::Music {
                         artist,
+                        albumartist: None,
                         album: yt_json.album,
                         title,
                     },
@@ -224,6 +230,7 @@ fn get_type(path: PathBuf) -> Option<Item> {
                             };
                         Metadata::Music {
                             artist,
+                            albumartist: None,
                             album: None,
                             title,
                         }
