@@ -68,16 +68,17 @@ const isMobile = isIOS || isAndroid;
 
 const encodeURIAll = (x: string) =>
   encodeURIComponent(x).replace(/[!'()*]/g, escape);
-const asURL = (path: string, auth: Auth) => {
+const asURL = <T extends string | undefined>(path: T, auth: Auth): T => {
+  if (path === undefined) return path;
   const url = new URL(
-    path,
+    encodeURIAll(path).replaceAll(/%2F/g, "/"),
     location.href.replace(location.hash, "").replace(/\/[^\/]*$/, "/"),
   );
   if (auth.type == "http") {
     url.username = auth.username;
     url.password = auth.password;
   }
-  return url.toString();
+  return url.toString() as T;
 };
 
 const playerAppURL = isIOS
@@ -120,14 +121,11 @@ const getSubtitle = (library: Item[], item: Item) =>
           x.meta.title === item.meta.title,
       )
       : []) as (Item & { meta: { language: string } })[]
-  )
-    .sort(
-      (a, b) =>
-        ([a.meta.language, null, b.meta.language].findIndex(
-              (x) => x === "en",
-            ) + 1 || 2) - 2,
-    )
-    .map((x) => encodeURI(x.path))[0];
+  ).sort(
+    (a, b) =>
+      ([a.meta.language, null, b.meta.language].findIndex((x) => x === "en") +
+          1 || 2) - 2,
+  )[0];
 
 const FileContainer = styled("div")`
   display: flex;
@@ -307,8 +305,8 @@ const App = () => {
   const player = useMemo<Player>(
     () => ({
       play: (item) => (window.location.href = asPlayableURL(
-        encodeURI(item.path),
-        getSubtitle(library, item),
+        item.path,
+        getSubtitle(library, item)?.path,
         auth,
       )),
     }),
