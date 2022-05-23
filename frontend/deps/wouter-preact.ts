@@ -3,4 +3,4 @@ export {
   Route,
   Router,
   Switch,
-} from "https://esm.sh/wouter-preact@2.8.0-alpha.2?deps=preact@10.6.6&pin=v71";
+} from "https://esm.sh/wouter-preact@2.8.0-alpha.2?deps=preact@10.6.6&pin=v82";

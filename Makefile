@@ -41,5 +41,5 @@ frontend/deps/goober.d.ts: Makefile frontend/deps/goober.ts
 	{ \
 		echo '// deno-lint-ignore-file'; \
 		echo 'import { JSX } from "./preact.ts";'; \
-		curl https://cdn.esm.sh/v71/goober@2.1.8/goober.d.ts; \
+		curl https://cdn.esm.sh/v82/goober@2.1.8/goober.d.ts; \
 	} >frontend/deps/goober.d.ts
