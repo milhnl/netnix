@@ -142,23 +142,13 @@ const FileContainer = styled("div")`
   }
 `;
 
-const Film = ({
-  item,
-  player,
-}: {
-  item: Item & { meta: FilmMeta };
-  player: Player;
-}) => <a onClick={() => player.play(item)}>{item.meta.title}</a>;
-
-const Episode = ({
-  item,
-  player,
-}: {
-  item: Item & { meta: EpisodeMeta };
-  player: Player;
-}) => (
+const ListItem = ({ item, player }: { item: Item; player: Player }) => (
   <a onClick={() => player.play(item)}>
-    {item.meta.season + "." + item.meta.episode + " " + item.meta.title}
+    {isFilm(item)
+      ? item.meta.title
+      : isEpisode(item)
+      ? item.meta.season + "." + item.meta.episode + " " + item.meta.title
+      : "No title"}
   </a>
 );
 
@@ -387,7 +377,7 @@ const App = () => {
                   a.meta.season.localeCompare(b.meta.season) ||
                   a.meta.episode.localeCompare(b.meta.episode),
               )
-              .map((x) => <Episode item={x} player={player} />)}
+              .map((x) => <ListItem item={x} player={player} />)}
           </FileContainer>
         )}
       </Route>
@@ -398,7 +388,7 @@ const App = () => {
               .filter(isFilm)
               .filter((x) => x.type.length == 1 && x.type[0] === "video")
               .sort((a, b) => a.meta.title.localeCompare(b.meta.title))
-              .map((x) => <Film item={x} player={player} />)}
+              .map((x) => <ListItem item={x} player={player} />)}
           </FileContainer>
         )}
       </Route>
