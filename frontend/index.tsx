@@ -259,6 +259,43 @@ const MainContainer = styled("div")`
   }
 `;
 
+const MainLink: FC<{ to: string; bgText: string; i: number }> = ({
+  to,
+  bgText,
+  i,
+  children,
+}) => {
+  const viewBox = new Array(2)
+    .fill(bgText.length)
+    .map((x) => (x * 5 + 25).toString())
+    .join(" ");
+  const textDims = new Array(2)
+    .fill(bgText.length)
+    .map((x) => `${4 + x / 5}rem`)
+    .join(" ");
+  const direction = i % 2 ? "-" : "";
+  const bg = `
+    <svg
+      style="transform: rotate(${direction}45deg); font-family: sans-serif"
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 ${viewBox}"
+    >
+      <text x="0" y="25" fill="gray" opacity="0.2">${bgText}</text>
+    </svg>
+  `;
+  return (
+    <a
+      href={"#" + to}
+      style={{
+        background: `url('data:image/svg+xml;base64,${btoa(bg)}')` +
+          `0 0/${textDims}, rgba(128, 128, 128, 0.1)`,
+      }}
+    >
+      {children}
+    </a>
+  );
+};
+
 const App = () => {
   const [auth, setAuth] = useState<Auth>({ type: "unknown" });
   const [library, setLibrary] = useState([] as Item[]);
@@ -368,12 +405,12 @@ const App = () => {
       <Route>
         {() => (
           <MainContainer as={Chrome} name="Netnix">
-            <a href="#/Series">
-              <span>Series</span>
-            </a>
-            <a href="#/Films">
+            <MainLink to="/Films" bgText="FILMS" i={0}>
               <span>Films</span>
-            </a>
+            </MainLink>
+            <MainLink to="/Series" bgText="TV" i={1}>
+              <span>Series</span>
+            </MainLink>
           </MainContainer>
         )}
       </Route>
