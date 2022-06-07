@@ -28,6 +28,10 @@ enum Metadata {
         #[serde(skip_serializing_if = "Option::is_none")]
         album: Option<String>,
         #[serde(skip_serializing_if = "Option::is_none")]
+        discnumber: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        tracknumber: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
         title: Option<String>,
     },
     Film {
@@ -172,6 +176,8 @@ fn get_type(path: PathBuf) -> Option<Item> {
                 artist: Some(tag.get_vorbis("artist")?.next()?.to_string()),
                 albumartist: Some(tag.get_vorbis("albumartist")?.next()?.to_string()),
                 album: Some(tag.get_vorbis("album")?.next()?.to_string()),
+                discnumber: Some(tag.get_vorbis("discnumber")?.next()?.to_string()),
+                tracknumber: Some(tag.get_vorbis("tracknumber")?.next()?.to_string()),
                 title: Some(tag.get_vorbis("title")?.next()?.to_string()),
             };
             Some(Item {
@@ -189,6 +195,8 @@ fn get_type(path: PathBuf) -> Option<Item> {
                     artist: Some(tag.artist()?.to_string()),
                     albumartist: Some(tag.album_artist()?.to_string()),
                     album: Some(tag.album()?.to_string()),
+                    discnumber: Some(tag.disc()?.to_string()),
+                    tracknumber: Some(tag.track()?.to_string()),
                     title: Some(tag.title()?.to_string()),
                 },
             })
@@ -214,6 +222,8 @@ fn get_type(path: PathBuf) -> Option<Item> {
                         artist,
                         albumartist: None,
                         album: yt_json.album,
+                        discnumber: None,
+                        tracknumber: None,
                         title,
                     },
                 })
@@ -232,6 +242,8 @@ fn get_type(path: PathBuf) -> Option<Item> {
                             artist,
                             albumartist: None,
                             album: None,
+                            discnumber: None,
+                            tracknumber: None,
                             title,
                         }
                     },
