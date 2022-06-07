@@ -33,6 +33,8 @@ enum Metadata {
         tracknumber: Option<String>,
         #[serde(skip_serializing_if = "Option::is_none")]
         title: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        date: Option<String>,
     },
     Film {
         title: String,
@@ -179,6 +181,7 @@ fn get_type(path: PathBuf) -> Option<Item> {
                 discnumber: Some(tag.get_vorbis("discnumber")?.next()?.to_string()),
                 tracknumber: Some(tag.get_vorbis("tracknumber")?.next()?.to_string()),
                 title: Some(tag.get_vorbis("title")?.next()?.to_string()),
+                date: Some(tag.get_vorbis("date")?.next()?.to_string()),
             };
             Some(Item {
                 path,
@@ -198,6 +201,9 @@ fn get_type(path: PathBuf) -> Option<Item> {
                     discnumber: Some(tag.disc()?.to_string()),
                     tracknumber: Some(tag.track()?.to_string()),
                     title: Some(tag.title()?.to_string()),
+                    date: tag.year().map(|x| x.to_string()).or_else(|| {
+                        tag.date_recorded().map(|x| x.to_string())
+                    }),
                 },
             })
         }
@@ -225,6 +231,7 @@ fn get_type(path: PathBuf) -> Option<Item> {
                         discnumber: None,
                         tracknumber: None,
                         title,
+                        date: None,
                     },
                 })
             }
@@ -245,6 +252,7 @@ fn get_type(path: PathBuf) -> Option<Item> {
                             discnumber: None,
                             tracknumber: None,
                             title,
+                            date: None,
                         }
                     },
                 }),
