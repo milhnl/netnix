@@ -10,43 +10,21 @@ import {
 } from "./deps/preact.ts";
 import { Link, Route, Router, Switch } from "./deps/wouter-preact.ts";
 import { setup, styled } from "./deps/goober.ts";
+import {
+  EpisodeMeta,
+  FilmMeta,
+  isEpisode,
+  isFilm,
+  Item,
+  Player,
+} from "./types.ts";
 import { Auth, getAuthHeader, Login } from "./auth.tsx";
 import { Chrome } from "./chrome.tsx";
 
-interface EpisodeMeta {
-  show: string;
-  season: string;
-  episode: string;
-  title: string;
-  language?: string;
-}
-interface MusicMeta {
-  artist: string;
-  title: string;
-}
-interface FilmMeta {
-  title: string;
-  language?: string;
-}
-
-type Item = {
-  meta: Record<never, never> | FilmMeta | EpisodeMeta | MusicMeta;
-  path: string;
-  type: ("music" | "video" | "subtitle")[];
-};
 type Library = {
   version: number;
   items: Item[];
 };
-
-interface Player {
-  play: (item: Item) => void;
-}
-
-const isEpisode = (x: Item): x is Item & { meta: EpisodeMeta } =>
-  "show" in x.meta;
-const isFilm = (x: Item): x is Item & { meta: FilmMeta } =>
-  "title" in x.meta && !("show" in x.meta);
 
 const currentLocation = () => self.location.hash.replace(/^#/, "") || "/";
 const navigate = (to: string) => (self.location.hash = to);
