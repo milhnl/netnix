@@ -231,18 +231,15 @@ const Message = styled("p")`
 const MainContainer = styled("div")`
   display: flex;
   flex-direction: column;
-  min-height: calc(100vh - var(--header-height));
-  @supports (-webkit-touch-callout: none) {
-    min-height: initial;
-  }
+  min-height: calc(100dvh - var(--header-height));
   & > a {
     flex-grow: 1;
     font-size: 10vh;
     color: inherit;
     text-decoration: none;
-    display: grid;
+    display: flex;
     align-items: center;
-    justify-items: center;
+    justify-content: center;
   }
   & > a:nth-child(odd) {
     background-color: rgba(128, 128, 128, 0.1);

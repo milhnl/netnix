@@ -1,28 +1,5 @@
-import { createGlobalStyles, styled } from "./deps/goober.ts";
+import { styled } from "./deps/goober.ts";
 import { Fragment, FunctionComponent as FC, h } from "./deps/preact.ts";
-
-const RootChromeStyle = createGlobalStyles`
-  @supports (-webkit-touch-callout: none) {
-    body {
-      display: grid;
-      position: fixed;
-      width: 100vw;
-      height: 100vh;
-      height: -webkit-fill-available;
-      grid-template-areas: "header" "main";
-      grid-template-rows: auto 1fr;
-    }
-    body > header {
-      grid-area: "header";
-    }
-    body > main {
-      grid-area: "main";
-      overflow-y: scroll;
-      overflow-x: hidden;
-      width: 100vw;
-    }
-  }
-`;
 
 const Header = styled("header")`
   display: flex;
@@ -32,6 +9,11 @@ const Header = styled("header")`
   background-color: var(--header-color);
   font-size: calc(var(--header-height) * 0.5);
   padding: 0 var(--header-height);
+  @supports (-webkit-touch-callout: none) {
+    position: sticky;
+    top: 0;
+    left: 0;
+  }
   & > span {
     flex: 1;
     text-align: center;
@@ -62,7 +44,6 @@ export const Chrome: FC<{ name: string; className?: string }> = ({
   children,
 }) => (
   <>
-    <RootChromeStyle />
     <Header>
       {location.hash && (
         <HeaderLink onClick={() => history.back()}>
