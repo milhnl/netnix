@@ -105,6 +105,17 @@ const getSubtitle = (library: Item[], item: Item) =>
           1 || 2) - 2,
   )[0];
 
+const getCoverArt = (library: Item[], item: Item) => {
+  if (isEpisode(item)) {
+    return library.find(
+      (x) =>
+        x.type.includes("artwork") &&
+        isEpisode(x) &&
+        x.meta.show === item.meta.show,
+    );
+  } else return undefined;
+};
+
 const FileContainer = styled("div")`
   display: flex;
   flex-direction: column;
@@ -180,19 +191,14 @@ const DirectoryContainer = styled("div")`
 const Directory = ({
   name,
   path,
-  auth,
+  bg,
 }: {
   name: string;
   path: string;
-  auth: Auth;
+  bg?: string | undefined;
 }) => (
   <Link to={path}>
-    <a
-      className="nodefault"
-      style={{
-        backgroundImage: `url(${asURL(path + "/folder.jpg", auth)})`,
-      }}
-    >
+    <a className="nodefault" style={bg && { backgroundImage: `url(${bg})` }}>
       <span>{name}</span>
     </a>
   </Link>
@@ -327,11 +333,18 @@ const App = () => {
                 [] as string[],
               )
               .sort((a, b) => a.localeCompare(b))
-              .map((x) => (
+              .map((show) => (
                 <Directory
-                  name={x}
-                  path={"/Series/" + encodeURIAll(x)}
-                  auth={auth}
+                  name={show}
+                  path={"/Series/" + encodeURIAll(show)}
+                  bg={asURL(
+                    getCoverArt(library, {
+                      path: "",
+                      type: [],
+                      meta: { show },
+                    })?.path,
+                    auth,
+                  )}
                 />
               ))}
           </DirectoryContainer>

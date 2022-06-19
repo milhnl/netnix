@@ -20,7 +20,7 @@ export const isFilm = (x: Item): x is Item & { meta: FilmMeta } =>
 export interface Item {
   meta: Record<never, never> | FilmMeta | EpisodeMeta;
   path: string;
-  type: ("video" | "subtitle")[];
+  type: ("video" | "subtitle" | "artwork")[];
 }
 
 export interface Player {
