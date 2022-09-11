@@ -41,6 +41,17 @@ export const tryAuthenticate = (
     req.setRequestHeader("X-Requested-With", "XMLHttpRequest");
     req.onreadystatechange = () => handleResult(req.status !== 401);
     req.send();
+  } else if (/chrome/i.test(navigator.userAgent)) {
+    const req = new XMLHttpRequest();
+    const url = new URL(checkURL);
+    url.username = "username" in auth ? auth.username : "letshopethisuser";
+    url.password = "password" in auth ? auth.password : "doesnotexist";
+    req.withCredentials = true;
+    req.open("HEAD", url, false);
+    req.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+    req.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+    req.onreadystatechange = () => handleResult(req.status !== 401);
+    req.send();
   } else {
     fetch(checkURL, {
       method: "HEAD",
