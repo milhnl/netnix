@@ -26,7 +26,9 @@ frontend/dist/index.html: Makefile frontend/index.html frontend/index.tsx \
 		frontend/deps/preact.ts frontend/deps/wouter-preact.ts \
 		frontend/deps/goober.ts frontend/deps/goober.d.ts
 	mkdir -p frontend/dist
-	deno bundle --config=frontend/deno.json frontend/index.tsx \
+	deno eval 'import { bundle } from "https://deno.land/x/emit/mod.ts";'` \
+			`' console.log((await bundle("./frontend/index.tsx", '"$$(\
+				cat frontend/deno.json)"')).code);' \
 		>frontend/dist/index.js
 	<frontend/index.html awk '\
 		/<!-- MODULE -->/ { \
