@@ -1,9 +1,9 @@
 {
   "imports": {
-    "goober": "https://esm.sh/goober@2.1.8?pin=v82&no-check",
-    "goober/global": "https://esm.sh/goober@2.1.8/global?pin=v82&no-check",
-    "preact": "https://esm.sh/preact@10.6.6?pin=v82",
-    "preact/hooks": "https://esm.sh/preact@10.6.6?pin=v82&path=/hooks",
-    "wouter-preact": "https://esm.sh/wouter-preact@2.8.0-alpha.2?deps=preact@10.6.6&pin=v82"
+    "goober": "https://esm.sh/goober@2.1.13?pin=v119",
+    "goober/global": "https://esm.sh/goober@2.1.13/global?pin=v119",
+    "preact": "https://esm.sh/preact@10.13.2?pin=v119",
+    "preact/hooks": "https://esm.sh/preact@10.13.2?pin=v119&path=/hooks",
+    "wouter-preact": "https://esm.sh/wouter-preact@2.9.0?deps=preact@10.13.2&pin=v119"
   }
 }
