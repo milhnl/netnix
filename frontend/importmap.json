@@ -1,0 +1,9 @@
+{
+  "imports": {
+    "goober": "https://esm.sh/goober@2.1.8?pin=v82&no-check",
+    "goober/global": "https://esm.sh/goober@2.1.8/global?pin=v82&no-check",
+    "preact": "https://esm.sh/preact@10.6.6?pin=v82",
+    "preact/hooks": "https://esm.sh/preact@10.6.6?pin=v82&path=/hooks",
+    "wouter-preact": "https://esm.sh/wouter-preact@2.8.0-alpha.2?deps=preact@10.6.6&pin=v82"
+  }
+}

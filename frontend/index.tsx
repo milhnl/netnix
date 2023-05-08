@@ -1,23 +1,8 @@
-import {
-  Fragment,
-  FunctionComponent as FC,
-  h,
-  render,
-  StateUpdater,
-  useEffect,
-  useMemo,
-  useState,
-} from "./deps/preact.ts";
-import { Link, Route, Router, Switch } from "./deps/wouter-preact.ts";
-import { setup, styled } from "./deps/goober.ts";
-import {
-  EpisodeMeta,
-  FilmMeta,
-  isEpisode,
-  isFilm,
-  Item,
-  Player,
-} from "./types.ts";
+import { Fragment, FunctionComponent as FC, h, render } from "preact";
+import { useEffect, useMemo, useState } from "preact/hooks";
+import { Link, Route, Router, Switch } from "wouter-preact";
+import { setup, styled } from "goober";
+import { isEpisode, isFilm, Item, Player } from "./types.ts";
 import { Auth, getAuthHeader, Login } from "./auth.tsx";
 import { Chrome } from "./chrome.tsx";
 

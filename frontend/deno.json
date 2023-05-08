@@ -8,6 +8,7 @@
     "jsxFactory": "h",
     "jsxFragmentFactory": "Fragment"
   },
+  "importMap": "./importmap.json",
   "fmt": {
     "options": {
       "lineWidth": 79

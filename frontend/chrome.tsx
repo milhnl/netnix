@@ -1,5 +1,5 @@
-import { styled } from "./deps/goober.ts";
-import { Fragment, FunctionComponent as FC, h } from "./deps/preact.ts";
+import { styled } from "goober";
+import { Fragment, FunctionComponent as FC, h } from "preact";
 
 const Header = styled("header")`
   display: flex;

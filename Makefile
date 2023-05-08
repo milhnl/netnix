@@ -22,14 +22,13 @@ format:
 	deno fmt
 
 frontend/dist/index.html: Makefile frontend/index.html frontend/index.tsx \
-		frontend/auth.tsx frontend/chrome.tsx \
-		frontend/deps/preact.ts frontend/deps/wouter-preact.ts \
-		frontend/deps/goober.ts frontend/deps/goober.d.ts
+		frontend/auth.tsx frontend/chrome.tsx
 	mkdir -p frontend/dist
-	deno eval 'import { bundle } from "https://deno.land/x/emit/mod.ts";'` \
-			`' console.log((await bundle("./frontend/index.tsx", '"$$(\
-				cat frontend/deno.json)"')).code);' \
-		>frontend/dist/index.js
+	cd frontend; deno eval \
+		'import { bundle } from "https://deno.land/x/emit@0.22.0/mod.ts";'` \
+			`' console.log((await bundle("./index.tsx", '"$$(\
+				cat deno.json)"')).code);' \
+		>dist/index.js
 	<frontend/index.html awk '\
 		/<!-- MODULE -->/ { \
 			while (getline <"frontend/dist/index.js") print; \
@@ -38,10 +37,3 @@ frontend/dist/index.html: Makefile frontend/index.html frontend/index.tsx \
 		{ print $$0; } \
 	' >frontend/dist/index.html
 	rm frontend/dist/index.js
-
-frontend/deps/goober.d.ts: Makefile frontend/deps/goober.ts
-	{ \
-		echo '// deno-lint-ignore-file'; \
-		echo 'import { JSX } from "./preact.ts";'; \
-		curl https://cdn.esm.sh/v82/goober@2.1.8/goober.d.ts; \
-	} >frontend/deps/goober.d.ts

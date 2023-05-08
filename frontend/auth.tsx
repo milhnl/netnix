@@ -1,5 +1,6 @@
-import { h, StateUpdater, useCallback, useEffect } from "./deps/preact.ts";
-import { createGlobalStyles, css, styled } from "./deps/goober.ts";
+import { h } from "preact";
+import { StateUpdater, useCallback, useEffect } from "preact/hooks";
+import { css, styled } from "goober";
 
 export type Auth =
   | {
