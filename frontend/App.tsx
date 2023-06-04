@@ -86,26 +86,58 @@ const getCoverArt = (library: Item[], item: Item) => {
 const fileContainerClass = css`
   display: flex;
   flex-direction: column;
-  & > * {
-    padding: 0.5em 1em;
-    font-size: 1.8rem;
-    line-height: 1.3;
-    color: inherit;
-    text-decoration: none;
-  }
   & > *:nth-child(even) {
     background-color: rgba(128, 128, 128, 0.1);
   }
 `;
 
-const ListItem = ({ item, player }: { item: Item; player: Player }) => (
-  <a onClick={() => player.play(item)}>
-    {isFilm(item)
-      ? item.meta.title
-      : isEpisode(item)
-      ? item.meta.season + "." + item.meta.episode + " " + item.meta.title
-      : "No title"}
-  </a>
+const ItemContainer = styled("div")`
+  display: flex;
+  height: 4.2rem;
+  & > * {
+    padding: 0.5rem 1rem;
+    font-size: 1.8rem;
+    line-height: 3.2rem;
+    color: inherit;
+    text-decoration: none;
+  }
+  & > .square {
+    box-sizing: border-box;
+    width: 4.2rem;
+    color: rgba(128, 128, 128, 0.3);
+    text-align: right;
+  }
+  & > img.square {
+    padding: 0;
+  }
+  & > .grow {
+    flex-grow: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+`;
+
+const ListItem = ({
+  item,
+  bg,
+  player,
+}: {
+  item: Item;
+  bg?: string;
+  player: Player;
+}) => (
+  <ItemContainer>
+    {isEpisode(item) && (
+      <>
+        <span class="square">{item.meta.season}</span>
+        <span class="square">{item.meta.episode}</span>
+      </>
+    )}
+    <a class="grow" onClick={() => player.play(item)}>
+      {"title" in item.meta ? item.meta.title : "No title"}
+    </a>
+  </ItemContainer>
 );
 
 const directoryContainerClass = css`
