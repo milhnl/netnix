@@ -1,7 +1,7 @@
 import { Fragment, FunctionComponent as FC, h, render } from "preact";
 import { useEffect, useMemo, useState } from "preact/hooks";
 import { Link, Route, Router, Switch } from "wouter-preact";
-import { setup, styled } from "goober";
+import { css, setup, styled } from "goober";
 import { isEpisode, isFilm, Item, Player } from "./types.ts";
 import { Auth, getAuthHeader, Login } from "./auth.tsx";
 import { Chrome } from "./chrome.tsx";
@@ -101,7 +101,7 @@ const getCoverArt = (library: Item[], item: Item) => {
   } else return undefined;
 };
 
-const FileContainer = styled("div")`
+const fileContainerClass = css`
   display: flex;
   flex-direction: column;
   & > * {
@@ -126,7 +126,7 @@ const ListItem = ({ item, player }: { item: Item; player: Player }) => (
   </a>
 );
 
-const DirectoryContainer = styled("div")`
+const directoryContainerClass = css`
   @media (min-width: 1000px) {
     --item-size: 20vw;
   }
@@ -197,7 +197,7 @@ const Message = styled("p")`
   font-size: 1.6rem;
 `;
 
-const MainContainer = styled("div")`
+const mainContainerClass = css`
   display: flex;
   flex-direction: column;
   min-height: calc(100dvh - var(--header-height));
@@ -309,7 +309,7 @@ const App = () => {
     <Switch>
       <Route path="/Series">
         {() => (
-          <DirectoryContainer as={Chrome} name="Series">
+          <Chrome className={directoryContainerClass} name="Series">
             {library
               .filter(isEpisode)
               .filter((x) => x.type.includes("video"))
@@ -332,12 +332,15 @@ const App = () => {
                   )}
                 />
               ))}
-          </DirectoryContainer>
+          </Chrome>
         )}
       </Route>
       <Route path="/Series/:name+">
         {({ name }: { name: string }) => (
-          <FileContainer as={Chrome} name={decodeURIComponent(name)}>
+          <Chrome
+            className={fileContainerClass}
+            name={decodeURIComponent(name)}
+          >
             {library
               .filter(isEpisode)
               .filter(
@@ -351,30 +354,30 @@ const App = () => {
                   a.meta.episode.localeCompare(b.meta.episode),
               )
               .map((x) => <ListItem item={x} player={player} />)}
-          </FileContainer>
+          </Chrome>
         )}
       </Route>
       <Route path="/Films">
         {() => (
-          <FileContainer as={Chrome} name="Films">
+          <Chrome className={fileContainerClass} name="Films">
             {library
               .filter(isFilm)
               .filter((x) => x.type.length == 1 && x.type[0] === "video")
               .sort((a, b) => a.meta.title.localeCompare(b.meta.title))
               .map((x) => <ListItem item={x} player={player} />)}
-          </FileContainer>
+          </Chrome>
         )}
       </Route>
       <Route>
         {() => (
-          <MainContainer as={Chrome} name="Netnix">
+          <Chrome className={mainContainerClass} name="Netnix">
             <MainLink to="/Films" bgText="FILMS" i={0}>
               <span>Films</span>
             </MainLink>
             <MainLink to="/Series" bgText="TV" i={1}>
               <span>Series</span>
             </MainLink>
-          </MainContainer>
+          </Chrome>
         )}
       </Route>
     </Switch>
