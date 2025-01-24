@@ -7,7 +7,8 @@ import { Auth, getAuthHeader, Login } from "./auth.tsx";
 import { Chrome } from "./chrome.tsx";
 
 const isAndroid = /(android)/i.test(navigator.userAgent);
-const isIOS = /iPad|iPhone|iPod/.test(navigator.platform) ||
+const isIOS =
+  /iPad|iPhone|iPod/.test(navigator.platform) ||
   (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 const isMobile = isIOS || isAndroid;
 
@@ -29,8 +30,8 @@ const asURL = <T extends string | undefined>(path: T, auth: Auth): T => {
 const playerAppURL = isIOS
   ? "https://apps.apple.com/us/app/vlc-for-mobile/id650377962"
   : isAndroid
-  ? "https://play.google.com/store/apps/details?id=org.videolan.vlc"
-  : undefined;
+    ? "https://play.google.com/store/apps/details?id=org.videolan.vlc"
+    : undefined;
 
 const asPlayableURL = (
   path: string,
@@ -40,36 +41,34 @@ const asPlayableURL = (
   isAndroid
     ? "vlc://" + asURL(path, auth)
     : isIOS
-    ? `vlc-x-callback://x-callback-url/stream?url=${
-      encodeURIAll(
-        asURL(path, auth),
-      )
-    }${subtitle ? `&sub=${encodeURIAll(asURL(subtitle, auth))}` : ""}`
-    : asURL(path, auth);
+      ? `vlc-x-callback://x-callback-url/stream?url=${encodeURIAll(
+          asURL(path, auth),
+        )}${subtitle ? `&sub=${encodeURIAll(asURL(subtitle, auth))}` : ""}`
+      : asURL(path, auth);
 
 const getSubtitle = (library: Item[], item: Item) =>
   (
     (isEpisode(item)
       ? library.filter(
-        (x) =>
-          isEpisode(x) &&
-          x.type.includes("subtitle") &&
-          x.meta.show === item.meta.show &&
-          x.meta.season === item.meta.season &&
-          x.meta.episode === item.meta.episode,
-      )
+          (x) =>
+            isEpisode(x) &&
+            x.type.includes("subtitle") &&
+            x.meta.show === item.meta.show &&
+            x.meta.season === item.meta.season &&
+            x.meta.episode === item.meta.episode,
+        )
       : isFilm(item)
-      ? library.filter(
-        (x) =>
-          isFilm(x) &&
-          x.type.includes("subtitle") &&
-          x.meta.title === item.meta.title,
-      )
-      : []) as (Item & { meta: { language: string } })[]
+        ? library.filter(
+            (x) =>
+              isFilm(x) &&
+              x.type.includes("subtitle") &&
+              x.meta.title === item.meta.title,
+          )
+        : []) as (Item & { meta: { language: string } })[]
   ).sort(
     (a, b) =>
       ([a.meta.language, null, b.meta.language].findIndex((x) => x === "en") +
-          1 || 2) - 2,
+        1 || 2) - 2,
   )[0];
 
 const getCoverArt = (library: Item[], item: Item) => {
@@ -257,7 +256,8 @@ const MainLink: FC<{ to: string; bgText: string; i: number }> = ({
     <a
       href={"#" + to}
       style={{
-        background: `url('data:image/svg+xml;base64,${btoa(bg)}')` +
+        background:
+          `url('data:image/svg+xml;base64,${btoa(bg)}')` +
           `0 0/${textDims}, rgba(128, 128, 128, 0.1)`,
       }}
     >
@@ -311,11 +311,12 @@ export const App = () => {
   }
   const player = useMemo<Player>(
     () => ({
-      play: (item) => (window.location.href = asPlayableURL(
-        item.path,
-        getSubtitle(library, item)?.path,
-        auth,
-      )),
+      play: (item) =>
+        (window.location.href = asPlayableURL(
+          item.path,
+          getSubtitle(library, item)?.path,
+          auth,
+        )),
     }),
     [library, auth],
   );
@@ -367,7 +368,9 @@ export const App = () => {
                   a.meta.season.localeCompare(b.meta.season) ||
                   a.meta.episode.localeCompare(b.meta.episode),
               )
-              .map((x) => <ListItem item={x} player={player} />)}
+              .map((x) => (
+                <ListItem item={x} player={player} />
+              ))}
           </Chrome>
         )}
       </Route>
@@ -378,7 +381,9 @@ export const App = () => {
               .filter(isFilm)
               .filter((x) => x.type.length == 1 && x.type[0] === "video")
               .sort((a, b) => a.meta.title.localeCompare(b.meta.title))
-              .map((x) => <ListItem item={x} player={player} />)}
+              .map((x) => (
+                <ListItem item={x} player={player} />
+              ))}
           </Chrome>
         )}
       </Route>
