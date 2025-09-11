@@ -18,7 +18,7 @@ const asURL = <T extends string | undefined>(path: T, auth: Auth): T => {
   if (path === undefined) return path;
   const url = new URL(
     encodeURIAll(path).replaceAll(/%2F/g, "/"),
-    location.href.replace(location.hash, "").replace(/\/[^\/]*$/, "/"),
+    location.href.replace(location.hash, "").replace(/[^\/]$/, "$&/"),
   );
   if (auth.type == "http") {
     url.username = auth.username;
