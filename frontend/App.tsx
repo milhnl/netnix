@@ -2,7 +2,7 @@ import { Fragment, FunctionComponent as FC, h } from "preact";
 import { useEffect, useMemo, useState } from "preact/hooks";
 import { Link, Route, Switch } from "wouter-preact";
 import { css, styled } from "goober";
-import { isEpisode, isFilm, Item, Player } from "./types.ts";
+import { isEpisode, isFilm, Item, EpisodeMeta, Player } from "./types.ts";
 import { Auth, getAuthHeader, Login } from "./auth.tsx";
 import { Chrome } from "./chrome.tsx";
 
@@ -127,12 +127,24 @@ const ListItem = ({
   player: Player;
 }) => (
   <ItemContainer>
-    {isEpisode(item) && (
-      <>
-        <span class="square">{item.meta.season}</span>
-        <span class="square">{item.meta.episode}</span>
-      </>
-    )}
+    <a class="grow" onClick={() => player.play(item)}>
+      {"title" in item.meta ? item.meta.title : "No title"}
+    </a>
+  </ItemContainer>
+);
+
+const EpisodeItem = ({
+  item,
+  bg,
+  player,
+}: {
+  item: Item & { meta: EpisodeMeta };
+  bg?: string;
+  player: Player;
+}) => (
+  <ItemContainer>
+    <span class="square">{item.meta.season}</span>
+    <span class="square">{item.meta.episode}</span>
     <a class="grow" onClick={() => player.play(item)}>
       {"title" in item.meta ? item.meta.title : "No title"}
     </a>
@@ -369,7 +381,7 @@ export const App = () => {
                   a.meta.episode.localeCompare(b.meta.episode),
               )
               .map((x) => (
-                <ListItem item={x} player={player} />
+                <EpisodeItem item={x} player={player} />
               ))}
           </Chrome>
         )}
