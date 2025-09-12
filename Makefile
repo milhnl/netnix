@@ -22,7 +22,8 @@ format:
 	deno fmt
 
 frontend/dist/index.html: Makefile frontend/index.html frontend/index.tsx \
-		frontend/auth.tsx frontend/chrome.tsx frontend/App.tsx
+		frontend/auth.tsx frontend/video.tsx frontend/utility.ts frontend/ui.tsx \
+		frontend/App.tsx
 	mkdir -p frontend/dist
 	cd frontend; deno eval \
 		'import { bundle } from "https://deno.land/x/emit@0.22.0/mod.ts";'` \

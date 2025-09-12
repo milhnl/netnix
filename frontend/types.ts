@@ -26,3 +26,10 @@ export interface Item {
 export interface Player {
   play: (item: Item) => void;
 }
+
+export type HistoryItem = Pick<Item, "path"> & { date: Date };
+
+export interface State {
+  history: HistoryItem[];
+  queue: Item[];
+}

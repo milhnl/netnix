@@ -1,10 +1,12 @@
 import { Fragment, FunctionComponent as FC, h } from "preact";
 import { useEffect, useMemo, useState, StateUpdater } from "preact/hooks";
-import { Link, Route, Switch } from "wouter-preact";
+import { Route, Switch } from "wouter-preact";
 import { css, styled } from "goober";
-import { isEpisode, isFilm, Item, EpisodeMeta, Player } from "./types.ts";
+import { isEpisode, isFilm, Item, Player, State } from "./types.ts";
+import { encodeURIAll, asURL } from "./utility.ts";
 import { Auth, getAuthHeader, Login } from "./auth.tsx";
-import { Chrome } from "./chrome.tsx";
+import { Chrome } from "./ui.tsx";
+import { SeriesOverview, SeriesEpisodeList, FilmsOverview } from "./video.tsx";
 
 const useStorage = <T,>(
   key: string,
@@ -69,35 +71,11 @@ const rfc9557string = (date = new Date()) => {
   return `${ts}${offset}[${dateFormatter.resolvedOptions().timeZone}]`;
 };
 
-type HistoryItem = Pick<Item, "path"> & { date: Date };
-interface State {
-  history: HistoryItem[];
-  queue: Item[];
-}
-
 const isAndroid = /(android)/i.test(navigator.userAgent);
 const isIOS =
   /iPad|iPhone|iPod/.test(navigator.userAgent) &&
   !((window as { MSStream?: unknown }).MSStream as unknown);
 const isMobile = isIOS || isAndroid;
-
-const encodeURIAll = (x: string) =>
-  encodeURIComponent(x).replace(
-    /[!'()*]/g,
-    (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`,
-  );
-const asURL = <T extends string | undefined>(path: T, auth: Auth): T => {
-  if (path === undefined) return path;
-  const url = new URL(
-    encodeURIAll(path).replaceAll(/%2F/g, "/"),
-    location.href.replace(location.hash, "").replace(/[^\/]$/, "$&/"),
-  );
-  if (auth.type == "http") {
-    url.username = auth.username;
-    url.password = auth.password;
-  }
-  return url.toString() as T;
-};
 
 const playerAppURL = isIOS
   ? "https://apps.apple.com/us/app/vlc-for-mobile/id650377962"
@@ -142,154 +120,6 @@ const getSubtitle = (library: Item[], item: Item) =>
       ([a.meta.language, null, b.meta.language].findIndex((x) => x === "en") +
         1 || 2) - 2,
   )[0];
-
-const getCoverArt = (library: Item[], item: Item) => {
-  if (isEpisode(item)) {
-    return library.find(
-      (x) =>
-        x.type.includes("artwork") &&
-        isEpisode(x) &&
-        x.meta.show === item.meta.show,
-    );
-  } else return undefined;
-};
-
-const fileContainerClass = css`
-  display: flex;
-  flex-direction: column;
-  & > *:nth-child(even) {
-    background-color: rgba(128, 128, 128, 0.1);
-  }
-`;
-
-const ItemContainer = styled("div")`
-  display: flex;
-  height: 4.2rem;
-  & > * {
-    padding: 0.5rem 1rem;
-    font-size: 1.8rem;
-    line-height: 3.2rem;
-    color: inherit;
-    text-decoration: none;
-  }
-  & > .square {
-    box-sizing: border-box;
-    width: 4.2rem;
-    color: rgba(128, 128, 128, 0.3);
-    text-align: right;
-  }
-  & > img.square {
-    padding: 0;
-  }
-  & > .grow {
-    flex-grow: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-`;
-
-const ListItem = ({ item, player }: { item: Item; player: Player }) => (
-  <ItemContainer>
-    <a class="grow" onClick={() => player.play(item)}>
-      {"title" in item.meta ? item.meta.title : "No title"}
-    </a>
-  </ItemContainer>
-);
-
-const EpisodeItem = ({
-  item,
-  player,
-  history,
-}: {
-  item: Item & { meta: EpisodeMeta };
-  player: Player;
-  history: HistoryItem[];
-}) => (
-  <ItemContainer>
-    <span class="square">{item.meta.season}</span>
-    <span class="square">{item.meta.episode}</span>
-    {/*<a class="grow" onClick={() => player.play(item)}>*/}
-    <a
-      class="grow"
-      style={
-        history.some(
-          (x) =>
-            (x instanceof Object ? (x as Exclude<typeof x, string>).path : x) ==
-            item.path,
-        )
-          ? { opacity: 0.5 }
-          : undefined
-      }
-      onClick={() => player.play(item)}
-    >
-      {"title" in item.meta ? item.meta.title : "No title"}
-    </a>
-  </ItemContainer>
-);
-
-const directoryContainerClass = css`
-  @media (min-width: 1000px) {
-    --item-size: 20vw;
-  }
-  @media (max-width: 1000px) {
-    --item-size: 25vw;
-  }
-  @media (max-width: 800px) {
-    --item-size: 33.33vw;
-  }
-  @media (max-width: 600px) {
-    --item-size: 50vw;
-  }
-  @media (max-width: 200px) {
-    --item-size: 100vw;
-  }
-  display: flex;
-  flex-wrap: wrap;
-  & > * {
-    cursor: pointer;
-    width: var(--item-size);
-    height: var(--item-size);
-    background-color: rgba(128, 128, 128, 0.1);
-    background-size: cover;
-    background-position: center;
-    display: grid;
-    align-items: end;
-    justify-items: stretch;
-  }
-  & > * > span {
-    padding: 0.2em 0.5em;
-    background-color: rgba(0, 0, 0, 0.75);
-    text-align: center;
-  }
-  @media (prefers-color-scheme: light) {
-    & > * > span {
-      color: white;
-    }
-  }
-  a.nodefault {
-    font-size: 1.8rem;
-    line-height: 1.3;
-    color: inherit;
-    text-decoration: none;
-  }
-`;
-
-const Directory = ({
-  name,
-  path,
-  bg,
-}: {
-  name: string;
-  path: string;
-  bg?: string | undefined;
-}) => (
-  <Link to={path}>
-    <a className="nodefault" style={bg && { backgroundImage: `url(${bg})` }}>
-      <span>{name}</span>
-    </a>
-  </Link>
-);
 
 const Message = styled("p")`
   margin: var(--header-height);
@@ -352,6 +182,24 @@ const MainLink: FC<{ to: string; bgText: string; i: number }> = ({
     >
       {children}
     </a>
+  );
+};
+
+export const MainScreen = ({
+  setUiName,
+}: {
+  setUiName: StateUpdater<string>;
+}) => {
+  useEffect(() => setUiName("Netnix"), []);
+  return (
+    <main className={mainContainerClass}>
+      <MainLink to="/Films" bgText="FILMS" i={0}>
+        <span>Films</span>
+      </MainLink>
+      <MainLink to="/Series" bgText="TV" i={1}>
+        <span>Series</span>
+      </MainLink>
+    </main>
   );
 };
 
@@ -436,85 +284,41 @@ export const App = () => {
     }),
     [library, auth],
   );
+  const [uiName, setUiName] = useState("Netnix");
   return (
-    <Switch>
-      <Route path="/Series">
-        {() => (
-          <Chrome className={directoryContainerClass} name="Series">
-            {library
-              .filter(isEpisode)
-              .filter((x) => x.type.includes("video"))
-              .reduce(
-                (a, n) => (a.includes(n.meta.show) ? a : [...a, n.meta.show]),
-                [] as string[],
-              )
-              .sort((a, b) => a.localeCompare(b))
-              .map((show) => (
-                <Directory
-                  name={show}
-                  path={"/Series/" + encodeURIAll(show)}
-                  bg={asURL(
-                    getCoverArt(library, {
-                      path: "",
-                      type: [],
-                      meta: { show },
-                    })?.path,
-                    auth,
-                  )}
-                />
-              ))}
-          </Chrome>
-        )}
-      </Route>
-      <Route path="/Series/:name+">
-        {({ name }: { name: string }) => (
-          <Chrome
-            className={fileContainerClass}
-            name={decodeURIComponent(name)}
-          >
-            {library
-              .filter(isEpisode)
-              .filter(
-                (x) =>
-                  x.type.includes("video") &&
-                  x.meta.show == decodeURIComponent(name),
-              )
-              .sort(
-                (a, b) =>
-                  a.meta.season.localeCompare(b.meta.season) ||
-                  a.meta.episode.localeCompare(b.meta.episode),
-              )
-              .map((x) => (
-                <EpisodeItem item={x} player={player} history={state.history} />
-              ))}
-          </Chrome>
-        )}
-      </Route>
-      <Route path="/Films">
-        {() => (
-          <Chrome className={fileContainerClass} name="Films">
-            {library
-              .filter(isFilm)
-              .filter((x) => x.type.length == 1 && x.type[0] === "video")
-              .sort((a, b) => a.meta.title.localeCompare(b.meta.title))
-              .map((x) => (
-                <ListItem item={x} player={player} />
-              ))}
-          </Chrome>
-        )}
-      </Route>
-      <Route>
-        {() => (
-          <Chrome className={mainContainerClass} name="Netnix">
-            <MainLink to="/Films" bgText="FILMS" i={0}>
-              <span>Films</span>
-            </MainLink>
-            <MainLink to="/Series" bgText="TV" i={1}>
-              <span>Series</span>
-            </MainLink>
-          </Chrome>
-        )}
-      </Route>
-    </Switch>
+    <Chrome name={uiName}>
+      <Switch>
+        <Route path="/Series">
+          {() => (
+            <SeriesOverview
+              library={library}
+              setUiName={setUiName}
+              auth={auth}
+            />
+          )}
+        </Route>
+        <Route path="/Series/:name+">
+          {({ name }: { name: string }) => (
+            <SeriesEpisodeList
+              library={library}
+              player={player}
+              setUiName={setUiName}
+              history={state.history}
+              name={decodeURIComponent(name)}
+            />
+          )}
+        </Route>
+        <Route path="/Films">
+          {() => (
+            <FilmsOverview
+              library={library}
+              player={player}
+              setUiName={setUiName}
+            />
+          )}
+        </Route>
+        <Route>{() => <MainScreen setUiName={setUiName} />}</Route>
+      </Switch>
+    </Chrome>
   );
 };
