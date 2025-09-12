@@ -1,10 +1,78 @@
 import { Fragment, FunctionComponent as FC, h } from "preact";
-import { useEffect, useMemo, useState } from "preact/hooks";
+import { useEffect, useMemo, useState, StateUpdater } from "preact/hooks";
 import { Link, Route, Switch } from "wouter-preact";
 import { css, styled } from "goober";
 import { isEpisode, isFilm, Item, EpisodeMeta, Player } from "./types.ts";
 import { Auth, getAuthHeader, Login } from "./auth.tsx";
 import { Chrome } from "./chrome.tsx";
+
+const useStorage = <T,>(
+  key: string,
+  initialValue: T,
+  options: {
+    storage?: Storage;
+    reviver?: Parameters<typeof JSON.parse>[1];
+    replacer?: (this: any, key: string, value: any) => any;
+  },
+): [T, StateUpdater<T>] => {
+  const storage = options.storage ?? localStorage;
+  const parseValue = (value: string | null) =>
+    value && value !== "undefined"
+      ? JSON.parse(value, options.reviver)
+      : initialValue;
+  const [value, setValue] = useState(() => parseValue(storage.getItem(key)));
+  self.addEventListener(
+    "storage",
+    (e) => e.key === key && setValue(parseValue(e.newValue)),
+  );
+  useEffect(
+    () => storage.setItem(key, JSON.stringify(value, options.replacer)),
+    [key, value, storage],
+  );
+  return [value, setValue];
+};
+
+const dateFormatter = new Intl.DateTimeFormat("en", {
+  hourCycle: "h23",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+  second: "numeric",
+  fractionalSecondDigits: 3,
+  timeZoneName: "longOffset",
+});
+
+const rfc9557string = (date = new Date()) => {
+  const parts = dateFormatter
+    .formatToParts(date)
+    .filter(({ type }) => type !== "literal");
+  const {
+    year,
+    month,
+    day,
+    hour,
+    minute,
+    second,
+    fractionalSecond,
+    timeZoneName,
+  } = Object.fromEntries(parts.map(({ type, value }) => [type, value]));
+
+  const offset =
+    timeZoneName === "GMT" ? "+00:00" : timeZoneName.replace("GMT", "");
+
+  const decimal = fractionalSecond ? `.${fractionalSecond}` : "";
+  const ts = `${year}-${month}-${day}T${hour}:${minute}:${second}${decimal}`;
+
+  return `${ts}${offset}[${dateFormatter.resolvedOptions().timeZone}]`;
+};
+
+type HistoryItem = Pick<Item, "path"> & { date: Date };
+interface State {
+  history: HistoryItem[];
+  queue: Item[];
+}
 
 const isAndroid = /(android)/i.test(navigator.userAgent);
 const isIOS =
@@ -137,15 +205,30 @@ const EpisodeItem = ({
   item,
   bg,
   player,
+  history,
 }: {
   item: Item & { meta: EpisodeMeta };
   bg?: string;
   player: Player;
+  history: HistoryItem[];
 }) => (
   <ItemContainer>
     <span class="square">{item.meta.season}</span>
     <span class="square">{item.meta.episode}</span>
-    <a class="grow" onClick={() => player.play(item)}>
+    {/*<a class="grow" onClick={() => player.play(item)}>*/}
+    <a
+      class="grow"
+      style={
+        history.some(
+          (x) =>
+            (x instanceof Object ? (x as Exclude<typeof x, string>).path : x) ==
+            item.path,
+        )
+          ? { opacity: 0.5 }
+          : undefined
+      }
+      onClick={() => player.play(item)}
+    >
       {"title" in item.meta ? item.meta.title : "No title"}
     </a>
   </ItemContainer>
@@ -321,14 +404,41 @@ export const App = () => {
       </>
     );
   }
+  const [state, setState] = useStorage<State>(
+    "state",
+    {
+      history: [],
+      queue: [],
+    },
+    {
+      replacer: function (k, v) {
+        return k === "date" && !isNaN(this[k].getTime())
+          ? rfc9557string(this[k])
+          : v;
+      },
+      reviver: (k, v) =>
+        k === "date" ? new Date(v.replace(/\[.*\]$/, "")) : v,
+    },
+  );
   const player = useMemo<Player>(
     () => ({
-      play: (item) =>
-        (window.location.href = asPlayableURL(
+      play: (item: Item) => {
+        setState(({ history, ...state }) => ({
+          ...state,
+          history: [
+            ...history,
+            {
+              path: item.path,
+              date: new Date(),
+            },
+          ],
+        }));
+        window.location.href = asPlayableURL(
           item.path,
           getSubtitle(library, item)?.path,
           auth,
-        )),
+        );
+      },
     }),
     [library, auth],
   );
@@ -381,7 +491,7 @@ export const App = () => {
                   a.meta.episode.localeCompare(b.meta.episode),
               )
               .map((x) => (
-                <EpisodeItem item={x} player={player} />
+                <EpisodeItem item={x} player={player} history={state.history} />
               ))}
           </Chrome>
         )}
