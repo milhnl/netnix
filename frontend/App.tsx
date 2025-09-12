@@ -12,6 +12,7 @@ const useStorage = <T,>(
   options: {
     storage?: Storage;
     reviver?: Parameters<typeof JSON.parse>[1];
+    // deno-lint-ignore no-explicit-any
     replacer?: (this: any, key: string, value: any) => any;
   },
 ): [T, StateUpdater<T>] => {
@@ -76,12 +77,15 @@ interface State {
 
 const isAndroid = /(android)/i.test(navigator.userAgent);
 const isIOS =
-  /iPad|iPhone|iPod/.test(navigator.platform) ||
-  (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  /iPad|iPhone|iPod/.test(navigator.userAgent) &&
+  !((window as { MSStream?: unknown }).MSStream as unknown);
 const isMobile = isIOS || isAndroid;
 
 const encodeURIAll = (x: string) =>
-  encodeURIComponent(x).replace(/[!'()*]/g, escape);
+  encodeURIComponent(x).replace(
+    /[!'()*]/g,
+    (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`,
+  );
 const asURL = <T extends string | undefined>(path: T, auth: Auth): T => {
   if (path === undefined) return path;
   const url = new URL(
@@ -185,15 +189,7 @@ const ItemContainer = styled("div")`
   }
 `;
 
-const ListItem = ({
-  item,
-  bg,
-  player,
-}: {
-  item: Item;
-  bg?: string;
-  player: Player;
-}) => (
+const ListItem = ({ item, player }: { item: Item; player: Player }) => (
   <ItemContainer>
     <a class="grow" onClick={() => player.play(item)}>
       {"title" in item.meta ? item.meta.title : "No title"}
@@ -203,12 +199,10 @@ const ListItem = ({
 
 const EpisodeItem = ({
   item,
-  bg,
   player,
   history,
 }: {
   item: Item & { meta: EpisodeMeta };
-  bg?: string;
   player: Player;
   history: HistoryItem[];
 }) => (
@@ -433,7 +427,7 @@ export const App = () => {
             },
           ],
         }));
-        window.location.href = asPlayableURL(
+        globalThis.location.href = asPlayableURL(
           item.path,
           getSubtitle(library, item)?.path,
           auth,
