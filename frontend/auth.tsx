@@ -1,4 +1,4 @@
-import { h } from "preact";
+import { h, createContext } from "preact";
 import { StateUpdater, useCallback, useEffect } from "preact/hooks";
 import { css, styled } from "goober";
 
@@ -179,3 +179,5 @@ export const Login = ({
     <span>loading</span>
   );
 };
+
+export const AuthContext = createContext<Auth>({ type: "unknown" });

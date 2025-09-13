@@ -1,5 +1,5 @@
 import { h } from "preact";
-import { useEffect, StateUpdater } from "preact/hooks";
+import { useEffect, useContext, StateUpdater } from "preact/hooks";
 
 import {
   isEpisode,
@@ -10,7 +10,7 @@ import {
   HistoryItem,
 } from "./types.ts";
 import { asURL, encodeURIAll, getCoverArt } from "./utility.ts";
-import { Auth } from "./auth.tsx";
+import { AuthContext } from "./auth.tsx";
 
 import {
   directoryContainerClass,
@@ -92,13 +92,12 @@ export const SeriesEpisodeList = ({
 export const SeriesOverview = ({
   library,
   setUiName,
-  auth,
 }: {
   library: Item[];
   setUiName: StateUpdater<string>;
-  auth: Auth;
 }) => {
   useEffect(() => setUiName("Series"), []);
+  const auth = useContext(AuthContext);
   return (
     <main className={directoryContainerClass}>
       {library

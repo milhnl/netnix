@@ -4,7 +4,7 @@ import { Route, Switch } from "wouter-preact";
 import { css, styled } from "goober";
 import { isEpisode, isFilm, Item, Player, State } from "./types.ts";
 import { encodeURIAll, asURL } from "./utility.ts";
-import { Auth, getAuthHeader, Login } from "./auth.tsx";
+import { Auth, getAuthHeader, Login, AuthContext } from "./auth.tsx";
 import { Chrome } from "./ui.tsx";
 import { SeriesOverview, SeriesEpisodeList, FilmsOverview } from "./video.tsx";
 
@@ -286,39 +286,35 @@ export const App = () => {
   );
   const [uiName, setUiName] = useState("Netnix");
   return (
-    <Chrome name={uiName}>
-      <Switch>
-        <Route path="/Series">
-          {() => (
-            <SeriesOverview
-              library={library}
-              setUiName={setUiName}
-              auth={auth}
-            />
-          )}
-        </Route>
-        <Route path="/Series/:name+">
-          {({ name }: { name: string }) => (
-            <SeriesEpisodeList
-              library={library}
-              player={player}
-              setUiName={setUiName}
-              history={state.history}
-              name={decodeURIComponent(name)}
-            />
-          )}
-        </Route>
-        <Route path="/Films">
-          {() => (
-            <FilmsOverview
-              library={library}
-              player={player}
-              setUiName={setUiName}
-            />
-          )}
-        </Route>
-        <Route>{() => <MainScreen setUiName={setUiName} />}</Route>
-      </Switch>
-    </Chrome>
+    <AuthContext.Provider value={auth}>
+      <Chrome name={uiName}>
+        <Switch>
+          <Route path="/Series">
+            {() => <SeriesOverview library={library} setUiName={setUiName} />}
+          </Route>
+          <Route path="/Series/:name+">
+            {({ name }: { name: string }) => (
+              <SeriesEpisodeList
+                library={library}
+                player={player}
+                setUiName={setUiName}
+                history={state.history}
+                name={decodeURIComponent(name)}
+              />
+            )}
+          </Route>
+          <Route path="/Films">
+            {() => (
+              <FilmsOverview
+                library={library}
+                player={player}
+                setUiName={setUiName}
+              />
+            )}
+          </Route>
+          <Route>{() => <MainScreen setUiName={setUiName} />}</Route>
+        </Switch>
+      </Chrome>
+    </AuthContext.Provider>
   );
 };
