@@ -4,10 +4,10 @@ import { css, styled } from "goober";
 
 export type Auth =
   | {
-    type: "http" | "unfinished";
-    username: string;
-    password: string;
-  }
+      type: "http" | "unfinished";
+      username: string;
+      password: string;
+    }
   | { type: "none" | "unknown" };
 
 export const getAuthHeader = (auth: Auth) =>
@@ -23,10 +23,10 @@ export const tryAuthenticate = (
   const handleResult = (success: boolean) =>
     success
       ? setAuth(
-        auth.type === "unfinished"
-          ? { ...auth, type: "http" }
-          : { type: "none" },
-      )
+          auth.type === "unfinished"
+            ? { ...auth, type: "http" }
+            : { type: "none" },
+        )
       : setAuth({ username: "", password: "", ...auth, type: "unfinished" });
   if (/.*Version.*Safari.*/.test(navigator.userAgent)) {
     const req = new XMLHttpRequest();
@@ -134,46 +134,48 @@ export const Login = ({
     );
   }, []);
   useEffect(() => tryAuthenticate(checkURL, auth, setAuth), []);
-  return "username" in auth
-    ? (
-      <Main>
-        <Label for="username">Username</Label>
-        <input
-          className={inputClassname}
-          type="text"
-          value={auth.username}
-          autofocus
-          autocomplete="username"
-          onChange={(ev) =>
-            setAuth((x: Auth) => ({
-              ...x,
-              username: (ev.target as HTMLInputElement).value,
-              password: withCurrentValue("password", auth),
-            }))}
-        />
-        <Label for="password">Password</Label>
-        <input
-          className={inputClassname}
-          ref={ref}
-          type="password"
-          value={auth.password}
-          autocomplete="current-password"
-          onChange={(ev) =>
-            setAuth((x: Auth) => ({
-              ...x,
-              password: (ev.target as HTMLInputElement).value,
-              username: withCurrentValue("username", auth),
-            }))}
-        />
-        <button
-          type="submit"
-          className={inputClassname}
-          disabled={auth.username === "" || auth.password === ""}
-          onClick={() => tryAuthenticate(checkURL, auth, setAuth)}
-        >
-          Log in
-        </button>
-      </Main>
-    )
-    : <span>loading</span>;
+  return "username" in auth ? (
+    <Main>
+      <Label for="username">Username</Label>
+      <input
+        className={inputClassname}
+        type="text"
+        value={auth.username}
+        autofocus
+        autocomplete="username"
+        onChange={(ev) =>
+          setAuth((x: Auth) => ({
+            ...x,
+            username: (ev.target as HTMLInputElement).value,
+            password: withCurrentValue("password", auth),
+          }))
+        }
+      />
+      <Label for="password">Password</Label>
+      <input
+        className={inputClassname}
+        ref={ref}
+        type="password"
+        value={auth.password}
+        autocomplete="current-password"
+        onChange={(ev) =>
+          setAuth((x: Auth) => ({
+            ...x,
+            password: (ev.target as HTMLInputElement).value,
+            username: withCurrentValue("username", auth),
+          }))
+        }
+      />
+      <button
+        type="submit"
+        className={inputClassname}
+        disabled={auth.username === "" || auth.password === ""}
+        onClick={() => tryAuthenticate(checkURL, auth, setAuth)}
+      >
+        Log in
+      </button>
+    </Main>
+  ) : (
+    <span>loading</span>
+  );
 };
