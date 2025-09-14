@@ -12,7 +12,8 @@ import { isEpisode, isFilm, Item, Player, State } from "./types.ts";
 import { encodeURIAll, asURL } from "./utility.ts";
 import { Auth, getAuthHeader, Login, AuthContext } from "./auth.tsx";
 import { Chrome } from "./ui.tsx";
-import { SeriesOverview, SeriesEpisodeList, FilmsOverview } from "./video.tsx";
+import { VideoRoutes } from "./video.tsx";
+import { LibraryContext, HistoryContext, PlayerContext } from "./context.ts";
 
 const useStorage = <T,>(
   key: string,
@@ -199,10 +200,10 @@ export const MainScreen = ({
   useEffect(() => setUiName("Netnix"), []);
   return (
     <main className={mainContainerClass}>
-      <MainLink to="/Films" bgText="FILMS" i={0}>
+      <MainLink to="/TV/Films" bgText="FILMS" i={0}>
         <span>Films</span>
       </MainLink>
-      <MainLink to="/Series" bgText="TV" i={1}>
+      <MainLink to="/TV/Series" bgText="TV" i={1}>
         <span>Series</span>
       </MainLink>
     </main>
@@ -293,34 +294,22 @@ export const App = () => {
   const [uiName, setUiName] = useState("Netnix");
   return (
     <AuthContext.Provider value={auth}>
-      <Chrome name={uiName}>
-        <Switch>
-          <Route path="/Series">
-            {() => <SeriesOverview library={library} setUiName={setUiName} />}
-          </Route>
-          <Route path="/Series/:name">
-            {({ name }: { name: string }) => (
-              <SeriesEpisodeList
-                library={library}
-                player={player}
-                setUiName={setUiName}
-                history={state.history}
-                name={decodeURIComponent(name)}
-              />
-            )}
-          </Route>
-          <Route path="/Films">
-            {() => (
-              <FilmsOverview
-                library={library}
-                player={player}
-                setUiName={setUiName}
-              />
-            )}
-          </Route>
-          <Route>{() => <MainScreen setUiName={setUiName} />}</Route>
-        </Switch>
-      </Chrome>
+      <LibraryContext.Provider value={library}>
+        <HistoryContext.Provider value={state.history}>
+          <PlayerContext.Provider value={player}>
+            <Chrome name={uiName}>
+              <Switch>
+                <Route path="/TV" nest>
+                  <VideoRoutes setUiName={setUiName} />
+                </Route>
+                <Route>
+                  <MainScreen setUiName={setUiName} />
+                </Route>
+              </Switch>
+            </Chrome>
+          </PlayerContext.Provider>
+        </HistoryContext.Provider>
+      </LibraryContext.Provider>
     </AuthContext.Provider>
   );
 };

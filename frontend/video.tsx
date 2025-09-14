@@ -1,6 +1,7 @@
-import { h } from "preact";
 import { useEffect, useContext, Dispatch, StateUpdater } from "preact/hooks";
 
+import { h, Fragment } from "preact";
+import { Switch, Route } from "wouter-preact";
 import {
   isEpisode,
   EpisodeMeta,
@@ -11,6 +12,7 @@ import {
 } from "./types.ts";
 import { asURL, encodeURIAll, getCoverArt } from "./utility.ts";
 import { AuthContext } from "./auth.tsx";
+import { LibraryContext, HistoryContext, PlayerContext } from "./context.ts";
 
 import {
   directoryContainerClass,
@@ -59,19 +61,16 @@ export const EpisodeItem = ({
 );
 
 export const SeriesEpisodeList = ({
-  library,
-  player,
-  history,
   name,
   setUiName,
 }: {
-  library: Item[];
-  player: Player;
-  history: HistoryItem[];
   name: string;
   setUiName: Dispatch<StateUpdater<string>>;
 }) => {
   useEffect(() => setUiName(name), []);
+  const library = useContext(LibraryContext);
+  const history = useContext(HistoryContext);
+  const player = useContext(PlayerContext);
   return (
     <main className={fileContainerClass}>
       {library
@@ -90,14 +89,13 @@ export const SeriesEpisodeList = ({
 };
 
 export const SeriesOverview = ({
-  library,
   setUiName,
 }: {
-  library: Item[];
   setUiName: Dispatch<StateUpdater<string>>;
 }) => {
   useEffect(() => setUiName("Series"), []);
   const auth = useContext(AuthContext);
+  const library = useContext(LibraryContext);
   return (
     <main className={directoryContainerClass}>
       {library
@@ -127,15 +125,13 @@ export const SeriesOverview = ({
 };
 
 export const FilmsOverview = ({
-  library,
-  player,
   setUiName,
 }: {
-  library: Item[];
-  player: Player;
   setUiName: Dispatch<StateUpdater<string>>;
 }) => {
   useEffect(() => setUiName("Films"), []);
+  const library = useContext(LibraryContext);
+  const player = useContext(PlayerContext);
   return (
     <main className={fileContainerClass}>
       {library
@@ -148,3 +144,24 @@ export const FilmsOverview = ({
     </main>
   );
 };
+
+export const VideoRoutes = ({
+  setUiName,
+}: {
+  setUiName: Dispatch<StateUpdater<string>>;
+}) => (
+  <Switch>
+    <Route path="/Series">
+      {() => <SeriesOverview setUiName={setUiName} />}
+    </Route>
+    <Route path="/Series/:name">
+      {({ name }: { name: string }) => (
+        <SeriesEpisodeList
+          setUiName={setUiName}
+          name={decodeURIComponent(name)}
+        />
+      )}
+    </Route>
+    <Route path="/Films">{() => <FilmsOverview setUiName={setUiName} />}</Route>
+  </Switch>
+);
