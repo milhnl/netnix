@@ -1,5 +1,5 @@
 import { h } from "preact";
-import { useEffect, useContext, StateUpdater } from "preact/hooks";
+import { useEffect, useContext, Dispatch, StateUpdater } from "preact/hooks";
 
 import {
   isEpisode,
@@ -69,7 +69,7 @@ export const SeriesEpisodeList = ({
   player: Player;
   history: HistoryItem[];
   name: string;
-  setUiName: StateUpdater<string>;
+  setUiName: Dispatch<StateUpdater<string>>;
 }) => {
   useEffect(() => setUiName(name), []);
   return (
@@ -94,7 +94,7 @@ export const SeriesOverview = ({
   setUiName,
 }: {
   library: Item[];
-  setUiName: StateUpdater<string>;
+  setUiName: Dispatch<StateUpdater<string>>;
 }) => {
   useEffect(() => setUiName("Series"), []);
   const auth = useContext(AuthContext);
@@ -133,7 +133,7 @@ export const FilmsOverview = ({
 }: {
   library: Item[];
   player: Player;
-  setUiName: StateUpdater<string>;
+  setUiName: Dispatch<StateUpdater<string>>;
 }) => {
   useEffect(() => setUiName("Films"), []);
   return (

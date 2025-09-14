@@ -1,5 +1,5 @@
 import { h, createContext } from "preact";
-import { StateUpdater, useCallback, useEffect } from "preact/hooks";
+import { Dispatch, StateUpdater, useCallback, useEffect } from "preact/hooks";
 import { css, styled } from "goober";
 
 export type Auth =
@@ -18,7 +18,7 @@ export const getAuthHeader = (auth: Auth) =>
 export const tryAuthenticate = (
   checkURL: string,
   auth: Auth,
-  setAuth: StateUpdater<Auth>,
+  setAuth: Dispatch<StateUpdater<Auth>>,
 ) => {
   const handleResult = (success: boolean) =>
     success
@@ -110,7 +110,7 @@ export const Login = ({
 }: {
   checkURL: string;
   auth: Auth;
-  setAuth: StateUpdater<Auth>;
+  setAuth: Dispatch<StateUpdater<Auth>>;
 }) => {
   const withCurrentValue = (name: "username" | "password", auth: Auth) =>
     (

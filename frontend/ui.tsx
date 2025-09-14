@@ -58,10 +58,12 @@ export const Directory = ({
   path: string;
   bg?: string | undefined;
 }) => (
-  <Link to={path}>
-    <a className="nodefault" style={bg && { backgroundImage: `url(${bg})` }}>
-      <span>{name}</span>
-    </a>
+  <Link
+    to={path}
+    className="nodefault"
+    style={bg && { backgroundImage: `url(${bg})` }}
+  >
+    <span>{name}</span>
   </Link>
 );
 

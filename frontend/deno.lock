@@ -1,5 +1,8 @@
 {
-  "version": "4",
+  "version": "5",
+  "redirects": {
+    "https://esm.sh/regexparam@^3.0.0?target=denonext": "https://esm.sh/regexparam@3.0.0?target=denonext"
+  },
   "remote": {
     "https://deno.land/std@0.140.0/_util/assert.ts": "e94f2eb37cebd7f199952e242c77654e43333c1ac4c5c700e929ea3aa5489f74",
     "https://deno.land/std@0.140.0/_util/os.ts": "3b4c6e27febd119d36a416d7a97bd3b0251b77c88942c8f16ee5953ea13e2e49",
@@ -34,8 +37,32 @@
     "https://deno.land/x/emit@0.22.0/emit.generated.js": "72b2fa962796906bfb196d1e5b071e8c3aa3ccd0a7da2a37ed60cb61393d5a11",
     "https://deno.land/x/emit@0.22.0/mod.ts": "cab769b1b794b11256e282d6ff088938302d9e98b58ca9d5e341409b00d98239",
     "https://esm.sh/goober@2.1.13?pin=v119": "3c2d2eece7565486fe1e6fe4d56ea88b8b5110e549275b3c7603b4b136a57e38",
+    "https://esm.sh/goober@2.1.16": "8085d0d04830fe06702ffcc38a64e47b6c45bb424f96fd02b2c4ab01645fac6a",
+    "https://esm.sh/goober@2.1.16/denonext/global.mjs": "78c6ddc2e5deea3341cc2b7a8a041274c1e40f2752daa20f50ed7daa00ca1b0f",
+    "https://esm.sh/goober@2.1.16/denonext/goober.mjs": "c092e7a74e8fe8dfed051459cef1e08372905f4c976b92b3f61ef400fa77c145",
+    "https://esm.sh/goober@2.1.16/global": "5c07d0362af116dfb2a212cd1005902b2434dcc6fe92fd9d17441176820f0d74",
+    "https://esm.sh/goober@2.1.16?pin=v119": "f450b5cd1501d71f5d46e3b520cf52bf78a0c1e93f352de0296cd4af5b18ab98",
     "https://esm.sh/preact@10.13.2?pin=v119": "7ea52131f4945e36d08dbfe0d5729fea60f3c3a8fc5fdf9370e1999191e44371",
     "https://esm.sh/preact@10.13.2?pin=v119&path=/hooks": "de55ace0bc3e277c730417189aec4994afa1789f21dec6901b8a63238dad3401",
-    "https://esm.sh/wouter-preact@2.9.0?deps=preact@10.13.2&pin=v119": "acd3e042e2d5fd9f1e89715e4c3e533e8127d4f5f231874f740f9af844de4fdb"
+    "https://esm.sh/preact@10.27.2": "3aff415ce76d0d09dcaa5b51e636f7309ae3cb8faae26ef2177ab433b8834701",
+    "https://esm.sh/preact@10.27.2/denonext/hooks.mjs": "aeca6fd4003b6f3df4805684d0f1fd63fa881e4501bfddcba276a5d23250b9ce",
+    "https://esm.sh/preact@10.27.2/denonext/preact.mjs": "9bdadca1e1a6732eab00de7e38cb26c08ec277fa2dddbfb2d5259e54b15450bb",
+    "https://esm.sh/preact@10.27.2?path=/hooks": "4557f63d768049cd4469c9b119a34e18b7918428520678cf72c9195f6b07cea8",
+    "https://esm.sh/preact@10.27.2?pin=v119": "8c14825c44097decc1fa6b870a704befc54f44dd3317e18d9693f2c98e22c795",
+    "https://esm.sh/preact@10.27.2?pin=v119&path=/hooks": "315209393d2d73b19b2a63b251ab20d3e72073a99e1470b9c3c625a1fe4502af",
+    "https://esm.sh/regexparam@3.0.0/denonext/regexparam.mjs": "e745e72f813298c1e715585121bd7d646dbc3ed52ce6d6f4d534ef3785d9a8e2",
+    "https://esm.sh/regexparam@3.0.0?target=denonext": "7872307e3b552c622d2da8f5fbdb86987254c65b029eec3b17cfffa6eaf92661",
+    "https://esm.sh/stable/preact@10.27.2/denonext/hooks.js": "61cfa9570d37fd62a77453b13b326b7f129a8963e03b5d2a776fd1ac8d3b6b65",
+    "https://esm.sh/stable/preact@10.27.2/denonext/preact.mjs": "13d0b1ae61d2d6c76387ec64ec8499e7235a57b95bebddfa204b3f2c19030059",
+    "https://esm.sh/v119/goober@2.1.16/denonext/goober.mjs": "4b57dc8957068dbe16bdee7eeef4f4a8b61202838349e46c650e69126975433e",
+    "https://esm.sh/v119/regexparam@3.0.0/denonext/regexparam.mjs": "3833f9318194e0c6103f9d0fe67a0e2ac0a76a9ff25bf4d71e560bbb95bca417",
+    "https://esm.sh/v119/wouter-preact@3.7.0/X-ZC9wcmVhY3RAMTAuMjcuMg/denonext/use-browser-location.js": "11d5bca3cdaae061c2ac91f1a81ca6650a2e56d3296a2fb16aca53ebcc0bf2dc",
+    "https://esm.sh/v119/wouter-preact@3.7.0/X-ZC9wcmVhY3RAMTAuMjcuMg/denonext/wouter-preact.mjs": "e4657c46ce68d0d3f867b2338d336f1290fd220cf19ec02d5bee4a830e96eef2",
+    "https://esm.sh/wouter-preact@2.9.0?deps=preact@10.13.2&pin=v119": "acd3e042e2d5fd9f1e89715e4c3e533e8127d4f5f231874f740f9af844de4fdb",
+    "https://esm.sh/wouter-preact@3.7.0/X-ZHByZWFjdEAxMC4yNy4y/denonext/esm/preact-deps-dec5c677.mjs": "ce0287909b58807dec187574c8e1c26ce5959871241c1c6dbb8b876323308567",
+    "https://esm.sh/wouter-preact@3.7.0/X-ZHByZWFjdEAxMC4yNy4y/denonext/use-browser-location.mjs": "59e7171879c97d33cb46179f254e654c24efd247517b1d9688d65339ebcc2291",
+    "https://esm.sh/wouter-preact@3.7.0/X-ZHByZWFjdEAxMC4yNy4y/denonext/wouter-preact.mjs": "27ae2b6ad2b025f8617e54053da028dc3d145d997d40cf2a82d5c0bf57e9d0ce",
+    "https://esm.sh/wouter-preact@3.7.0?deps=preact@10.27.2": "67de9d0c7a6e6d2e074d80f2fb721153bc3078957a5e2a34f445d56453575e19",
+    "https://esm.sh/wouter-preact@3.7.0?deps=preact@10.27.2&pin=v119": "0ee6a111bd061301efe23ffcdabf94eb7c370045f1ae18c4ce8087ee9b1ad806"
   }
 }

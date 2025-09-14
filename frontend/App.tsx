@@ -1,5 +1,11 @@
 import { Fragment, FunctionComponent as FC, h } from "preact";
-import { useEffect, useMemo, useState, StateUpdater } from "preact/hooks";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  Dispatch,
+  StateUpdater,
+} from "preact/hooks";
 import { Route, Switch } from "wouter-preact";
 import { css, styled } from "goober";
 import { isEpisode, isFilm, Item, Player, State } from "./types.ts";
@@ -17,7 +23,7 @@ const useStorage = <T,>(
     // deno-lint-ignore no-explicit-any
     replacer?: (this: any, key: string, value: any) => any;
   },
-): [T, StateUpdater<T>] => {
+): [T, Dispatch<StateUpdater<T>>] => {
   const storage = options.storage ?? localStorage;
   const parseValue = (value: string | null) =>
     value && value !== "undefined"
@@ -188,7 +194,7 @@ const MainLink: FC<{ to: string; bgText: string; i: number }> = ({
 export const MainScreen = ({
   setUiName,
 }: {
-  setUiName: StateUpdater<string>;
+  setUiName: Dispatch<StateUpdater<string>>;
 }) => {
   useEffect(() => setUiName("Netnix"), []);
   return (
@@ -292,7 +298,7 @@ export const App = () => {
           <Route path="/Series">
             {() => <SeriesOverview library={library} setUiName={setUiName} />}
           </Route>
-          <Route path="/Series/:name+">
+          <Route path="/Series/:name">
             {({ name }: { name: string }) => (
               <SeriesEpisodeList
                 library={library}
