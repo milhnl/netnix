@@ -80,7 +80,7 @@ fn info_json_exists(path: &Path) -> Option<YoutubeDl> {
     serde_json::from_reader(reader).ok()
 }
 
-fn get_video_type_from_path(path: &Path) -> FileType {
+fn get_file_type_from_path(path: &Path) -> FileType {
     env::current_dir()
         .unwrap_or_else(|_| PathBuf::from("."))
         .join(path)
@@ -165,6 +165,10 @@ fn parse_episode_title(path: &Path) -> Metadata {
     }
 }
 
+fn flac_get_tag(tag: &FlacTag, name: &str) -> Option<String> {
+    Some(tag.get_vorbis(name)?.next()?.to_string())
+}
+
 fn get_type(path: PathBuf) -> Option<Item> {
     match path.extension()?.to_str()? {
         "aac" => Some(Item {
@@ -174,36 +178,50 @@ fn get_type(path: PathBuf) -> Option<Item> {
         }),
         "flac" => {
             let tag = FlacTag::read_from_path(&path).ok()?;
-            let meta = Metadata::Music {
-                artist: Some(tag.get_vorbis("artist")?.next()?.to_string()),
-                albumartist: Some(tag.get_vorbis("albumartist")?.next()?.to_string()),
-                album: Some(tag.get_vorbis("album")?.next()?.to_string()),
-                discnumber: Some(tag.get_vorbis("discnumber")?.next()?.to_string()),
-                tracknumber: Some(tag.get_vorbis("tracknumber")?.next()?.to_string()),
-                title: Some(tag.get_vorbis("title")?.next()?.to_string()),
-                date: Some(tag.get_vorbis("date")?.next()?.to_string()),
-            };
-            Some(Item {
-                path,
-                r#type: vec!["music".to_string()],
-                meta,
-            })
-        }
-        "mp3" => {
-            let tag = Id3Tag::read_from_path(&path).ok()?;
+            let artist = flac_get_tag(&tag, "artist");
+            let albumartist = flac_get_tag(&tag, "albumartist");
+            let album = flac_get_tag(&tag, "album");
+            let discnumber = flac_get_tag(&tag, "discnumber");
+            let tracknumber = flac_get_tag(&tag, "tracknumber");
+            let title = flac_get_tag(&tag, "title");
+            let date = flac_get_tag(&tag, "date");
             Some(Item {
                 path,
                 r#type: vec!["music".to_string()],
                 meta: Metadata::Music {
-                    artist: Some(tag.artist()?.to_string()),
-                    albumartist: Some(tag.album_artist()?.to_string()),
-                    album: Some(tag.album()?.to_string()),
-                    discnumber: Some(tag.disc()?.to_string()),
-                    tracknumber: Some(tag.track()?.to_string()),
-                    title: Some(tag.title()?.to_string()),
-                    date: tag.year().map(|x| x.to_string()).or_else(|| {
-                        tag.date_recorded().map(|x| x.to_string())
-                    }),
+                    artist: artist,
+                    albumartist: albumartist,
+                    album: album,
+                    discnumber: discnumber,
+                    tracknumber,
+                    title,
+                    date,
+                },
+            })
+        }
+        "mp3" => {
+            let tag = Id3Tag::read_from_path(&path).ok()?;
+            let artist = tag.artist().map(|x| x.to_string());
+            let albumartist = tag.album_artist().map(|x| x.to_string());
+            let album = tag.album().map(|x| x.to_string());
+            let discnumber = tag.disc().map(|x| x.to_string());
+            let tracknumber = tag.track().map(|x| x.to_string());
+            let title = tag.title().map(|x| x.to_string());
+            let date = tag
+                .year()
+                .map(|x| x.to_string())
+                .or_else(|| tag.date_recorded().map(|x| x.to_string()));
+            Some(Item {
+                path,
+                r#type: vec!["music".to_string()],
+                meta: Metadata::Music {
+                    artist,
+                    albumartist,
+                    album,
+                    discnumber,
+                    tracknumber,
+                    title,
+                    date,
                 },
             })
         }
@@ -216,7 +234,6 @@ fn get_type(path: PathBuf) -> Option<Item> {
             Some(yt_json)
                 if yt_json.categories.iter().any(|x| x == "Music") =>
             {
-                eprintln!("info json exists: {}", path.to_str()?);
                 let (artist, title) = match (yt_json.artist, yt_json.track) {
                     (Some(artist), Some(title)) => (Some(artist), Some(title)),
                     (_, _) => parse_song_title(&yt_json.title),
@@ -235,7 +252,7 @@ fn get_type(path: PathBuf) -> Option<Item> {
                     },
                 })
             }
-            _ => match get_video_type_from_path(&path) {
+            _ => match get_file_type_from_path(&path) {
                 FileType::Music => Some(Item {
                     path: path.clone(),
                     r#type: vec!["music".to_string(), "video".to_string()],
@@ -274,7 +291,7 @@ fn get_type(path: PathBuf) -> Option<Item> {
                 }
             },
         },
-        "srt" => match get_video_type_from_path(&path) {
+        "srt" => match get_file_type_from_path(&path) {
             FileType::Film => Some(Item {
                 path: path.clone(),
                 r#type: vec!["subtitle".to_string()],
