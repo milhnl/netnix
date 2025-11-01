@@ -55,6 +55,7 @@ enum Metadata {
 #[derive(Serialize)]
 struct Item {
     path: PathBuf,
+    mime: String,
     r#type: Vec<String>,
     meta: Metadata,
 }
@@ -81,6 +82,15 @@ fn info_json_exists(path: &Path) -> Option<YoutubeDl> {
     let file = File::open(path).ok()?;
     let reader = BufReader::new(file);
     serde_json::from_reader(reader).ok()
+}
+
+fn get_mime_type_from_path(path: &Path) -> &'static str {
+    match path.extension().and_then(|x| x.to_str()) {
+        Some("mkv") => "video/matroska",
+        Some("mp4") => "video/mp4",
+        Some("webm") => "video/webm",
+        _ => "application/octet-stream",
+    }
 }
 
 fn get_file_type_from_path(path: &Path) -> FileType {
@@ -179,6 +189,7 @@ fn get_type(
     match path.extension()?.to_str()? {
         "aac" => Some(Item {
             path,
+            mime: "audio/aac".to_string(),
             r#type: vec!["music".to_string()],
             meta: Metadata::Unknown {},
         }),
@@ -219,6 +230,7 @@ fn get_type(
             }
             Some(Item {
                 path,
+                mime: "audio/flac".to_string(),
                 r#type: vec!["music".to_string()],
                 meta: Metadata::Music {
                     artist: artist,
@@ -271,6 +283,7 @@ fn get_type(
             }
             Some(Item {
                 path,
+                mime: "audio/mpeg".to_string(),
                 r#type: vec!["music".to_string()],
                 meta: Metadata::Music {
                     artist,
@@ -285,6 +298,7 @@ fn get_type(
         }
         "wav" => Some(Item {
             path,
+            mime: "audio/wav".to_string(),
             r#type: vec!["music".to_string()],
             meta: Metadata::Unknown {},
         }),
@@ -297,7 +311,8 @@ fn get_type(
                     (_, _) => parse_song_title(&yt_json.title),
                 };
                 Some(Item {
-                    path,
+                    path: path.clone(),
+                    mime: get_mime_type_from_path(&path).to_string(),
                     r#type: vec!["music".to_string(), "video".to_string()],
                     meta: Metadata::Music {
                         artist,
@@ -313,6 +328,7 @@ fn get_type(
             _ => match get_file_type_from_path(&path) {
                 FileType::Music => Some(Item {
                     path: path.clone(),
+                    mime: get_mime_type_from_path(&path).to_string(),
                     r#type: vec!["music".to_string(), "video".to_string()],
                     meta: {
                         let (artist, title) =
@@ -333,6 +349,7 @@ fn get_type(
                 }),
                 FileType::Film => Some(Item {
                     path: path.clone(),
+                    mime: get_mime_type_from_path(&path).to_string(),
                     r#type: vec!["video".to_string()],
                     meta: Metadata::Film {
                         title: path.file_stem()?.to_str()?.to_string(),
@@ -347,6 +364,7 @@ fn get_type(
                     }
                     Some(Item {
                         path: path.clone(),
+                        mime: get_mime_type_from_path(&path).to_string(),
                         r#type: vec!["video".to_string()],
                         meta: parse_episode_title(&path),
                     })
@@ -360,6 +378,7 @@ fn get_type(
         "srt" => match get_file_type_from_path(&path) {
             FileType::Film => Some(Item {
                 path: path.clone(),
+                mime: get_mime_type_from_path(&path).to_string(),
                 r#type: vec!["subtitle".to_string()],
                 meta: Metadata::Film {
                     title: path.file_stem()?.to_str()?.to_string(),
@@ -367,6 +386,7 @@ fn get_type(
             }),
             FileType::Episode => Some(Item {
                 path: path.clone(),
+                mime: get_mime_type_from_path(&path).to_string(),
                 r#type: vec!["subtitle".to_string()],
                 meta: parse_episode_title(&path),
             }),
@@ -377,7 +397,8 @@ fn get_type(
                 if let Some(folder) = path.parent() {
                     if let Some(meta) = folder_meta.get(folder) {
                         return Some(Item {
-                            path,
+                            path: path.clone(),
+                            mime: get_mime_type_from_path(&path).to_string(),
                             r#type: vec!["artwork".to_string()],
                             meta: meta.clone(),
                         });
