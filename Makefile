@@ -11,6 +11,7 @@ install: ump.sh yt_title_clean.sh
 	awk '/^\. / { f=$$2; while (getline < f) print; next; } { print; }' \
 		<tv.sh >"${DESTDIR}${PREFIX}/bin/tv"
 	chmod 755 "${DESTDIR}${PREFIX}/bin/tv"
+	cargo install --root "${DESTDIR}${PREFIX}" --path .
 
 uninstall:
 	rm -f "${DESTDIR}${PREFIX}/bin/ump" \

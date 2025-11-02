@@ -1,5 +1,5 @@
 [package]
-name = "ump"
+name = "netnix"
 version = "0.1.0"
 authors = ["Michiel van den Heuvel <michielvdnheuvel@gmail.com>"]
 edition = "2018"

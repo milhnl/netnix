@@ -87,3 +87,25 @@ follow, but check the `Makefile`.
 If you want to use this, help building it or something else, let me know. It's
 an 'old' project, but I've been using it all these years to play my own media.
 It might soon be time to share this.
+
+### Installation
+
+If you put your binaries in `~/.local/bin`:
+
+    PREFIX="$HOME/.local" make install
+
+This will install the indexer as a `netnix` executable. You can then run it
+like:
+
+```sh
+netnix /path/to/media >/path/to/media/.ump-library.json
+```
+
+You'll probably also want to build the frontend:
+
+```sh
+make frontend/dist/index.html
+cp frontend/dist/index.html /path/to/media/index.html
+```
+
+Now you're done.
