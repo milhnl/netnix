@@ -54,29 +54,36 @@ export const AlbumsOverview = ({
 }) => {
   useEffect(() => setUiName(artist), []);
   const library = useContext(LibraryContext);
+  const player = useContext(PlayerContext);
   const auth = useContext(AuthContext);
 
+  const all = library
+    .filter(isMusic)
+    .filter(
+      (x) =>
+        x.type.includes("music") &&
+        (x.meta.albumartist ?? x.meta.artist) == artist,
+    );
+
+  const albums = all
+    .reduce((a, n) => {
+      const album = n.meta.album;
+      return !album || a.includes(album) ? a : [...a, album!];
+    }, [] as string[])
+    .sort((a, b) => a.localeCompare(b));
+
+  const tracks = all.filter((x) => !x.meta.album);
+
+  const showSections = albums.length > 0 && tracks.length > 0;
+
   return (
-    <main className={directoryContainerClass}>
-      {library
-        .filter(isMusic)
-        .filter(
-          (x) =>
-            x.type.includes("music") &&
-            (x.meta.albumartist ?? x.meta.artist) == artist,
-        )
-        .reduce(
-          (a, n) => {
-            const album = n.meta.album;
-            return a.includes(album) ? a : [...a, album];
-          },
-          [] as (string | undefined)[],
-        )
-        .sort((a, b) => a?.localeCompare(b!) ?? Number.MAX_VALUE)
-        .map((album) => (
+    <>
+      {showSections && <h2>Albums</h2>}
+      <main className={directoryContainerClass}>
+        {albums.map((album) => (
           <Directory
-            name={album ?? "Other"}
-            path={`/${encodeURIAll(artist)}/${encodeURIAll(album ?? "Other")}`}
+            name={album}
+            path={`/${encodeURIAll(artist)}/${encodeURIAll(album)}`}
             bg={asURL(
               getCoverArt(library, {
                 meta: { artist, album },
@@ -85,7 +92,18 @@ export const AlbumsOverview = ({
             )}
           />
         ))}
-    </main>
+      </main>
+      {showSections && <h2>Singles/other tracks</h2>}
+      <main className={fileContainerClass}>
+        {tracks.map((item) => (
+          <ItemContainer>
+            <a class="grow" onClick={() => player.play(item)}>
+              {"title" in item.meta ? item.meta.title : "No title"}
+            </a>
+          </ItemContainer>
+        ))}
+      </main>
+    </>
   );
 };
 
