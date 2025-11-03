@@ -20,6 +20,12 @@ export const asURL = <T extends string | undefined>(path: T, auth: Auth): T => {
   return url.toString() as T;
 };
 
+export const isAndroid = /(android)/i.test(navigator.userAgent);
+export const isIOS =
+  /iPad|iPhone|iPod/.test(navigator.userAgent) &&
+  !((window as { MSStream?: unknown }).MSStream as unknown);
+export const isMobile = isIOS || isAndroid;
+
 export const getCoverArt = (library: Item[], item: Item) => {
   if (isEpisode(item)) {
     return library.find(

@@ -9,7 +9,7 @@ import {
 import { Route, Switch } from "wouter-preact";
 import { css, styled } from "goober";
 import { isEpisode, isFilm, Item, Player, State } from "./types.ts";
-import { encodeURIAll, asURL } from "./utility.ts";
+import { encodeURIAll, asURL, isIOS, isAndroid, isMobile } from "./utility.ts";
 import { Auth, getAuthHeader, Login, AuthContext } from "./auth.tsx";
 import { Chrome } from "./ui.tsx";
 import { VideoRoutes } from "./video.tsx";
@@ -77,12 +77,6 @@ const rfc9557string = (date = new Date()) => {
 
   return `${ts}${offset}[${dateFormatter.resolvedOptions().timeZone}]`;
 };
-
-const isAndroid = /(android)/i.test(navigator.userAgent);
-const isIOS =
-  /iPad|iPhone|iPod/.test(navigator.userAgent) &&
-  !((window as { MSStream?: unknown }).MSStream as unknown);
-const isMobile = isIOS || isAndroid;
 
 const playerAppURL = isIOS
   ? "https://apps.apple.com/us/app/vlc-for-mobile/id650377962"
