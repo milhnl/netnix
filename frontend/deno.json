@@ -1,9 +1,6 @@
 {
   "compilerOptions": {
-    "lib": [
-      "dom",
-      "deno.ns"
-    ],
+    "lib": ["dom", "deno.ns"],
     "jsx": "react",
     "jsxFactory": "h",
     "jsxFragmentFactory": "Fragment"
