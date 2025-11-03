@@ -26,7 +26,7 @@ export const isIOS =
   !((window as { MSStream?: unknown }).MSStream as unknown);
 export const isMobile = isIOS || isAndroid;
 
-export const getCoverArt = (library: Item[], item: Item) => {
+export const getCoverArt = (library: Item[], item: Pick<Item, "meta">) => {
   if (isEpisode(item)) {
     return library.find(
       (x) =>

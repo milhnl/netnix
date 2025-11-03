@@ -6,15 +6,16 @@ export interface EpisodeMeta {
   language?: string;
 }
 
-export const isEpisode = (x: Item): x is Item & { meta: EpisodeMeta } =>
-  "show" in x.meta;
+export const isEpisode = (
+  x: Pick<Item, "meta">,
+): x is Item & { meta: EpisodeMeta } => "show" in x.meta;
 
 export interface FilmMeta {
   title: string;
   language?: string;
 }
 
-export const isFilm = (x: Item): x is Item & { meta: FilmMeta } =>
+export const isFilm = (x: Pick<Item, "meta">): x is Item & { meta: FilmMeta } =>
   "title" in x.meta && !("show" in x.meta) && !("artist" in x.meta);
 
 export interface Item {

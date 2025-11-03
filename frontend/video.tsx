@@ -110,14 +110,7 @@ export const SeriesOverview = ({
           <Directory
             name={show}
             path={"/Series/" + encodeURIAll(show)}
-            bg={asURL(
-              getCoverArt(library, {
-                path: "",
-                type: [],
-                meta: { show },
-              })?.path,
-              auth,
-            )}
+            bg={asURL(getCoverArt(library, { meta: { show } })?.path, auth)}
           />
         ))}
     </main>
