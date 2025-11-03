@@ -15,7 +15,9 @@ export interface FilmMeta {
   language?: string;
 }
 
-export const isFilm = (x: Pick<Item, "meta">): x is Item & { meta: FilmMeta } =>
+export const isFilm = (
+  x: Pick<Item, "meta">,
+): x is Item & { meta: FilmMeta } =>
   "title" in x.meta && !("show" in x.meta) && !("artist" in x.meta);
 
 export interface MusicMeta {

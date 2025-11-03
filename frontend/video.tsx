@@ -45,8 +45,9 @@ export const EpisodeItem = ({
       style={
         history.some(
           (x) =>
-            (x instanceof Object ? (x as Exclude<typeof x, string>).path : x) ==
-            item.path,
+            (x instanceof Object
+              ? (x as Exclude<typeof x, string>).path
+              : x) == item.path,
         )
           ? { opacity: 0.5 }
           : undefined
@@ -153,6 +154,8 @@ export const VideoRoutes = ({
         />
       )}
     </Route>
-    <Route path="/Films">{() => <FilmsOverview setUiName={setUiName} />}</Route>
+    <Route path="/Films">
+      {() => <FilmsOverview setUiName={setUiName} />}
+    </Route>
   </Switch>
 );

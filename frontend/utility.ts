@@ -9,7 +9,10 @@ export const encodeURIAll = <T extends string | undefined>(x: T) =>
       )
     : x;
 
-export const asURL = <T extends string | undefined>(path: T, auth: Auth): T => {
+export const asURL = <T extends string | undefined>(
+  path: T,
+  auth: Auth,
+): T => {
   if (path === undefined) return path;
   const url = new URL(
     encodeURIAll(path).replaceAll(/%2F/g, "/"),

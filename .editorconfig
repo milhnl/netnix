@@ -1,0 +1,34 @@
+root = true
+
+[*]
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+trim_trailing_whitespace = true
+charset = utf-8
+end_of_line = lf
+max_line_length = 79
+# Many shell scripts have no extension
+binary_next_line = true
+
+[*.rs]
+indent_style = space
+max_line_length = 79
+
+[*.md]
+indent_size = 4
+max_line_length = 79
+indent_style = space
+trim_trailing_whitespace = false
+
+[*.{js,ts,jsx,tsx,json,html,scss,css}]
+indent_size = 2
+max_line_length = 79
+
+[*.yml]
+indent_style = space
+indent_size = 2
+max_line_length = 79
+
+[*.sh]
+max_line_length = 79
