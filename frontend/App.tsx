@@ -259,12 +259,14 @@ export const App = () => {
     },
     {
       replacer: function (k, v) {
-        return k === "date" && !isNaN(this[k].getTime())
+        return k === "date" && v instanceof Date && !isNaN(this[k]?.getTime())
           ? rfc9557string(this[k])
           : v;
       },
       reviver: (k, v) =>
-        k === "date" ? new Date(v.replace(/\[.*\]$/, "")) : v,
+        k === "date" && v.match(/.*\[.*\/.*\]/)
+          ? new Date(v.replace(/\[.*\]$/, ""))
+          : v,
     },
   );
   const player = useMemo<Player>(
