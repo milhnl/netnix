@@ -14,7 +14,7 @@ import { encodeURIAll, asURL, isIOS, isAndroid, isMobile } from "./utility.ts";
 import { Auth, getAuthHeader, Login, AuthContext } from "./auth.tsx";
 import { Chrome } from "./ui.tsx";
 import { VideoRoutes } from "./video.tsx";
-import { LibraryContext, HistoryContext, PlayerContext } from "./context.ts";
+import { LibraryContext, StateContext, PlayerContext } from "./context.ts";
 import { MusicRoutes } from "./music.tsx";
 
 const dateFormatter = new Intl.DateTimeFormat("en", {
@@ -225,7 +225,7 @@ export const App = () => {
       </>
     );
   }
-  const [state, setState] = useStorage<State>(
+  const stateWithSetter = useStorage<State>(
     "state",
     {
       history: [],
@@ -246,7 +246,7 @@ export const App = () => {
   const player = useMemo<Player>(
     () => ({
       play: (item: Item) => {
-        setState(({ history, ...state }) => ({
+        stateWithSetter[1](({ history, ...state }) => ({
           ...state,
           history: [
             ...history,
@@ -269,7 +269,7 @@ export const App = () => {
   return (
     <AuthContext.Provider value={auth}>
       <LibraryContext.Provider value={library}>
-        <HistoryContext.Provider value={state.history}>
+        <StateContext.Provider value={stateWithSetter}>
           <PlayerContext.Provider value={player}>
             <Chrome name={uiName}>
               <Switch>
@@ -285,7 +285,7 @@ export const App = () => {
               </Switch>
             </Chrome>
           </PlayerContext.Provider>
-        </HistoryContext.Provider>
+        </StateContext.Provider>
       </LibraryContext.Provider>
     </AuthContext.Provider>
   );

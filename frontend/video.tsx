@@ -10,7 +10,7 @@ import {
 } from "./types.ts";
 import { asURL, encodeURIAll, getCoverArt } from "./utility.ts";
 import { AuthContext } from "./auth.tsx";
-import { LibraryContext, HistoryContext, PlayerContext } from "./context.ts";
+import { LibraryContext, StateContext, PlayerContext } from "./context.ts";
 
 import {
   directoryContainerClass,
@@ -68,7 +68,7 @@ export const SeriesEpisodeList = ({
 }) => {
   useEffect(() => setUiName(name), []);
   const library = useContext(LibraryContext);
-  const history = useContext(HistoryContext);
+  const [{ history }] = useContext(StateContext);
   const player = useContext(PlayerContext);
   return (
     <main className={fileContainerClass}>
