@@ -110,11 +110,10 @@ const Header = styled("header")`
   background-color: var(--header-color);
   font-size: calc(var(--header-height) * 0.5);
   padding: 0 var(--header-height);
-  @supports (-webkit-touch-callout: none) {
-    position: sticky;
-    top: 0;
-    left: 0;
-  }
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
   & > span {
     flex: 1;
     text-align: center;
@@ -156,6 +155,7 @@ export const Chrome: FC<{ name: string }> = ({ name, children }) => (
       )}
       <span>{name}</span>
     </Header>
+    <div style={{ height: "var(--header-height)" }} />
     {children}
   </>
 );
