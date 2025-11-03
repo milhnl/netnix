@@ -9,39 +9,13 @@ import {
 import { Route, Switch } from "wouter-preact";
 import { css, styled } from "goober";
 import { isEpisode, isFilm, Item, Player, State } from "./types.ts";
+import { useStorage } from "./state.ts";
 import { encodeURIAll, asURL, isIOS, isAndroid, isMobile } from "./utility.ts";
 import { Auth, getAuthHeader, Login, AuthContext } from "./auth.tsx";
 import { Chrome } from "./ui.tsx";
 import { VideoRoutes } from "./video.tsx";
 import { LibraryContext, HistoryContext, PlayerContext } from "./context.ts";
 import { MusicRoutes } from "./music.tsx";
-
-const useStorage = <T,>(
-  key: string,
-  initialValue: T,
-  options: {
-    storage?: Storage;
-    reviver?: Parameters<typeof JSON.parse>[1];
-    // deno-lint-ignore no-explicit-any
-    replacer?: (this: any, key: string, value: any) => any;
-  },
-): [T, Dispatch<StateUpdater<T>>] => {
-  const storage = options.storage ?? localStorage;
-  const parseValue = (value: string | null) =>
-    value && value !== "undefined"
-      ? JSON.parse(value, options.reviver)
-      : initialValue;
-  const [value, setValue] = useState(() => parseValue(storage.getItem(key)));
-  self.addEventListener(
-    "storage",
-    (e) => e.key === key && setValue(parseValue(e.newValue)),
-  );
-  useEffect(
-    () => storage.setItem(key, JSON.stringify(value, options.replacer)),
-    [key, value, storage],
-  );
-  return [value, setValue];
-};
 
 const dateFormatter = new Intl.DateTimeFormat("en", {
   hourCycle: "h23",
