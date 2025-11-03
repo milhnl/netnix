@@ -1,11 +1,13 @@
 import { Auth } from "./auth.tsx";
 import { isEpisode, Item } from "./types.ts";
 
-export const encodeURIAll = (x: string) =>
-  encodeURIComponent(x).replace(
-    /[!'()*]/g,
-    (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`,
-  );
+export const encodeURIAll = <T extends string | undefined>(x: T) =>
+  x
+    ? encodeURIComponent(x).replace(
+        /[!'()*]/g,
+        (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`,
+      )
+    : x;
 
 export const asURL = <T extends string | undefined>(path: T, auth: Auth): T => {
   if (path === undefined) return path;

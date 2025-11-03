@@ -97,7 +97,7 @@ const asPlayableURL = (
         )}${subtitle ? `&sub=${encodeURIAll(asURL(subtitle, auth))}` : ""}`
       : asURL(path, auth);
 
-const getSubtitle = (library: Item[], item: Item) =>
+const getSubtitle = (library: Item[], item: Item): Item | undefined =>
   (
     (isEpisode(item)
       ? library.filter(
