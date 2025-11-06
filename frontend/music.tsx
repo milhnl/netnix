@@ -66,11 +66,20 @@ export const AlbumsOverview = ({
     );
 
   const albums = all
-    .reduce((a, n) => {
-      const album = n.meta.album;
-      return !album || a.includes(album) ? a : [...a, album!];
-    }, [] as string[])
-    .sort((a, b) => a.localeCompare(b));
+    .reduce(
+      (a, n) => {
+        const album = n.meta.album;
+        return !album || a.some((x) => x[0] === album)
+          ? a
+          : [...a, [album!, n.meta.date] as [string, string | undefined]];
+      },
+      [] as [string, string | undefined][],
+    )
+    .sort(
+      (a, b) =>
+        (a[1] ?? "").localeCompare(b[1] ?? "") || a[0].localeCompare(b[0]),
+    )
+    .map(([album]) => album);
 
   const tracks = all.filter((x) => !x.meta.album);
 

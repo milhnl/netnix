@@ -26,6 +26,7 @@ export interface MusicMeta {
   album?: string;
   title: string;
   tracknumber: number;
+  date?: string;
 }
 
 export const isMusic = (
