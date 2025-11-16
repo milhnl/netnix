@@ -63,8 +63,10 @@
     "https://esm.sh/wouter-preact@2.9.0?deps=preact@10.13.2&pin=v119": "acd3e042e2d5fd9f1e89715e4c3e533e8127d4f5f231874f740f9af844de4fdb",
     "https://esm.sh/wouter-preact@3.7.0/X-ZHByZWFjdEAxMC4yNy4y/denonext/esm/preact-deps-dec5c677.mjs": "ce0287909b58807dec187574c8e1c26ce5959871241c1c6dbb8b876323308567",
     "https://esm.sh/wouter-preact@3.7.0/X-ZHByZWFjdEAxMC4yNy4y/denonext/use-browser-location.mjs": "59e7171879c97d33cb46179f254e654c24efd247517b1d9688d65339ebcc2291",
+    "https://esm.sh/wouter-preact@3.7.0/X-ZHByZWFjdEAxMC4yNy4y/denonext/use-hash-location.mjs": "b9e2762863f0798d913ec4b4197be7a2b87f2b052ceab77a11b335bd8d94545d",
     "https://esm.sh/wouter-preact@3.7.0/X-ZHByZWFjdEAxMC4yNy4y/denonext/wouter-preact.mjs": "27ae2b6ad2b025f8617e54053da028dc3d145d997d40cf2a82d5c0bf57e9d0ce",
     "https://esm.sh/wouter-preact@3.7.0?deps=preact@10.27.2": "67de9d0c7a6e6d2e074d80f2fb721153bc3078957a5e2a34f445d56453575e19",
+    "https://esm.sh/wouter-preact@3.7.0?deps=preact@10.27.2&path=/use-hash-location": "4cce0742b96388f3c00deaffe730237d838aacaebb17810c630e2d9d85ff3e0e",
     "https://esm.sh/wouter-preact@3.7.0?deps=preact@10.27.2&pin=v119": "0ee6a111bd061301efe23ffcdabf94eb7c370045f1ae18c4ce8087ee9b1ad806"
   }
 }
