@@ -35,7 +35,7 @@ export const ArtistsOverview = ({
             path={`/${encodeURIAll(artist)}`}
             bg={asURL(
               getCoverArt(library, {
-                meta: { artist },
+                meta: { albumartist: artist, artist },
               })?.path,
               auth,
             )}
