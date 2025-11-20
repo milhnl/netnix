@@ -25,6 +25,7 @@ export interface MusicMeta {
   albumartist?: string;
   album?: string;
   title: string;
+  discnumber?: number;
   tracknumber: number;
   date?: string;
 }

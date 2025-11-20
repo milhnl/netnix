@@ -137,7 +137,11 @@ export const AlbumOverview = ({
         (x.meta.albumartist ?? x.meta.artist) == artist &&
         x.meta.album == album,
     )
-    .sort((a, b) => a.meta.tracknumber - b.meta.tracknumber);
+    .sort(
+      ({ meta: a }, { meta: b }) =>
+        (a.discnumber ?? 0) - (b.discnumber ?? 0) ||
+        a.tracknumber - b.tracknumber,
+    );
 
   return (
     <main className={fileContainerClass}>
