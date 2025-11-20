@@ -238,9 +238,12 @@ export const App = () => {
           : v;
       },
       reviver: (k, v) =>
-        k === "date" && v.match(/.*\[.*\/.*\]/)
-          ? new Date(v.replace(/\[.*\]$/, ""))
-          : v,
+        (
+          ({
+            date: () =>
+              v.match(/.*\[.*\/.*\]/) ? new Date(v.replace(/\[.*\]$/, "")) : v,
+          })[k] ?? (() => v)
+        )(),
     },
   );
   const player = useMemo<Player>(
