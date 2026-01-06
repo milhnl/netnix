@@ -48,6 +48,24 @@ export const PlayerElement: FC = () => {
   const setMediaRef = (node: HTMLVideoElement | HTMLAudioElement | null) => {
     mediaRef.current = node;
   };
+  useEffect(() => {
+    const fullscreenchangeHandler = () => {
+      if (
+        document.fullscreenElement &&
+        document.fullscreenElement === mediaRef.current
+      ) {
+        mediaRef.current!.controls = true;
+      } else {
+        mediaRef.current!.controls = false;
+      }
+    };
+    document.addEventListener("fullscreenchange", fullscreenchangeHandler);
+    return () =>
+      document.removeEventListener(
+        "fullscreenchange",
+        fullscreenchangeHandler,
+      );
+  });
   const currentLog = state.history.find((x) =>
     ["play", "pause"].includes(x.action),
   );
@@ -70,9 +88,10 @@ export const PlayerElement: FC = () => {
         ref={setMediaRef}
         src={currentSrc}
         {...sharedProps}
-        onClick={({ target }) =>
-          (target as HTMLVideoElement).requestFullscreen()
-        }
+        onClick={({ target }) => {
+          (target as HTMLVideoElement).controls = true;
+          (target as HTMLVideoElement).requestFullscreen();
+        }}
         onError={(ev) => {
           console.error(ev);
           const subtitle = encodeURIAll(

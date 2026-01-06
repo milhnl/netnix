@@ -1,5 +1,5 @@
-import { FunctionComponent as FC } from "preact";
-import { useContext, useEffect, useMemo } from "preact/hooks";
+import { TargetedEvent, FunctionComponent as FC } from "preact";
+import { useContext, useState, useEffect, useMemo } from "preact/hooks";
 import { css, styled } from "goober";
 import { Link } from "wouter-preact";
 import { MusicMeta, EpisodeMeta, FilmMeta } from "./types.ts";
