@@ -336,17 +336,25 @@ hash() {
 
 ump_youtube_download() {
     set -- "$*" "$(hash "$*")"
-    mkdir -p "$UMP_DOWNLOADS"
+    [ -n "$2" ] || set "$1" "$(
+        LC_ALL=C </dev/urandom tr -dc "[:alnum:]" | head -c 32
+    )"
+    mkdir -p "$UMP_DOWNLOADS/$2"
     yt-dlp \
         --abort-on-unavailable-fragment --fragment-retries=20 \
         --default-search ytsearch \
         --download-archive "$UMP_DOWNLOADS/.ytdl-archive" \
         --write-info-json --add-metadata \
-        -o "$UMP_DOWNLOADS/.ytdl-tmp-$2-%(playlist_index)s.%(ext)s" "$1" >&2
-    for json in "$UMP_DOWNLOADS/.ytdl-tmp-$2"-*.info.json; do
-        video="$(ump_youtube_find_ext "${json%%.info.json}")" || return 1
+        -P "$UMP_DOWNLOADS/$2" \
+        -o "infojson:.%(fulltitle)s.%(ext)s" \
+        -o "%(fulltitle)s.%(ext)s" "$1" >&2
+    for json in "$UMP_DOWNLOADS/$2"/.*.info.json; do
+        video="$(ump_youtube_find_ext "$(dirname "$json")/$(
+            basename "$json" | sed 's/\.\([^/]*\)\.info\.json$/\1/'
+        )")" || die "Downloading went wrong"
         ump_youtube_move_file "$video" "$json"
     done
+    rm -rf "${UMP_DOWNLOADS:?}/$2"
 }
 
 ump_youtube_find_by_name() {
