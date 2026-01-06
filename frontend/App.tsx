@@ -14,6 +14,7 @@ import { Auth, getAuthHeader, Login, AuthContext } from "./auth.tsx";
 import { Chrome } from "./ui.tsx";
 import { VideoRoutes } from "./video.tsx";
 import { LibraryContext, HistoryContext, PlayerContext } from "./context.ts";
+import { MusicRoutes } from "./music.tsx";
 
 const useStorage = <T,>(
   key: string,
@@ -200,6 +201,9 @@ export const MainScreen = ({
       <MainLink to="/TV/Series" bgText="TV" i={1}>
         <span>Series</span>
       </MainLink>
+      <MainLink to="/Music" bgText="MUSIC" i={2}>
+        <span>Music</span>
+      </MainLink>
     </main>
   );
 };
@@ -295,6 +299,9 @@ export const App = () => {
               <Switch>
                 <Route path="/TV" nest>
                   <VideoRoutes setUiName={setUiName} />
+                </Route>
+                <Route path="/Music" nest>
+                  <MusicRoutes setUiName={setUiName} />
                 </Route>
                 <Route>
                   <MainScreen setUiName={setUiName} />

@@ -1,5 +1,5 @@
 import { Auth } from "./auth.tsx";
-import { isEpisode, Item } from "./types.ts";
+import { isEpisode, isMusic, Item } from "./types.ts";
 
 export const encodeURIAll = <T extends string | undefined>(x: T) =>
   x
@@ -35,6 +35,14 @@ export const getCoverArt = (library: Item[], item: Pick<Item, "meta">) => {
         x.type.includes("artwork") &&
         isEpisode(x) &&
         x.meta.show === item.meta.show,
+    );
+  } else if (isMusic(item)) {
+    return library.find(
+      (x) =>
+        x.type.includes("artwork") &&
+        isMusic(x) &&
+        x.meta.artist === item.meta.artist &&
+        x.meta.album === item.meta.album,
     );
   } else return undefined;
 };

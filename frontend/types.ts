@@ -18,10 +18,22 @@ export interface FilmMeta {
 export const isFilm = (x: Pick<Item, "meta">): x is Item & { meta: FilmMeta } =>
   "title" in x.meta && !("show" in x.meta) && !("artist" in x.meta);
 
+export interface MusicMeta {
+  artist: string;
+  albumartist?: string;
+  album?: string;
+  title: string;
+  tracknumber: number;
+}
+
+export const isMusic = (
+  x: Pick<Item, "meta">,
+): x is Item & { meta: MusicMeta } => "artist" in x.meta;
+
 export interface Item {
-  meta: Record<never, never> | FilmMeta | EpisodeMeta;
+  meta: Record<never, never> | FilmMeta | EpisodeMeta | MusicMeta;
   path: string;
-  type: ("video" | "subtitle" | "artwork")[];
+  type: ("video" | "music" | "subtitle" | "artwork")[];
 }
 
 export interface Player {
