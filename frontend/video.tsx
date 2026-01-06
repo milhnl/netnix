@@ -1,6 +1,7 @@
 import { useEffect, useContext, Dispatch, StateUpdater } from "preact/hooks";
 import { Switch, Route } from "wouter-preact";
 import { isEpisode, EpisodeMeta, isFilm, Item, HistoryItem } from "./types.ts";
+import { playNow } from "./playState.ts";
 import { asURL, encodeURIAll, getCoverArt } from "./utility.ts";
 import { AuthContext } from "./auth.tsx";
 import { LibraryContext, StateContext } from "./context.ts";
@@ -20,6 +21,7 @@ export const EpisodeItem = ({
   bg?: string;
   history: HistoryItem[];
 }) => {
+  const [, setState] = useContext(StateContext);
   return (
     <ItemContainer>
       <span class="square">{item.meta.season}</span>
@@ -36,6 +38,7 @@ export const EpisodeItem = ({
             ? { opacity: 0.5 }
             : undefined
         }
+        onClick={() => setState(playNow(item))}
       >
         {"title" in item.meta ? item.meta.title : "No title"}
       </a>
@@ -106,6 +109,7 @@ export const FilmsOverview = ({
 }) => {
   useEffect(() => setUiName("Films"), []);
   const library = useContext(LibraryContext);
+  const [, setState] = useContext(StateContext);
   return (
     <main className={fileContainerClass}>
       {library
@@ -114,7 +118,7 @@ export const FilmsOverview = ({
         .sort((a, b) => a.meta.title.localeCompare(b.meta.title))
         .map((x) => (
           <ItemContainer>
-            <a class="grow">
+            <a class="grow" onClick={() => setState(playNow(x))}>
               {"title" in x.meta ? x.meta.title : "No title"}
             </a>
           </ItemContainer>

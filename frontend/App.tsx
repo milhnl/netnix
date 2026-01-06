@@ -3,14 +3,15 @@ import {
   useEffect,
   useMemo,
   useState,
+  useCallback,
   Dispatch,
   StateUpdater,
 } from "preact/hooks";
 import { Route, Switch } from "wouter-preact";
 import { css, styled } from "goober";
-import { isEpisode, isFilm, Item, State } from "./types.ts";
+import { Item, State, StateUpdate, HistoryItem } from "./types.ts";
 import { useStorage } from "./state.ts";
-import { encodeURIAll, asURL, isIOS, isAndroid, isMobile } from "./utility.ts";
+import { asURL, isIOS, isAndroid, isMobile } from "./utility.ts";
 import { Auth, getAuthHeader, Login, AuthContext } from "./auth.tsx";
 import { Chrome } from "./ui.tsx";
 import { VideoRoutes } from "./video.tsx";
@@ -59,44 +60,6 @@ const playerAppURL = isIOS
     ? "https://play.google.com/store/apps/details?id=org.videolan.vlc"
     : undefined;
 
-const asPlayableURL = (
-  path: string,
-  subtitle: string | undefined,
-  auth: Auth,
-) =>
-  isAndroid
-    ? "vlc://" + asURL(path, auth)
-    : isIOS
-      ? `vlc-x-callback://x-callback-url/stream?url=${encodeURIAll(
-          asURL(path, auth),
-        )}${subtitle ? `&sub=${encodeURIAll(asURL(subtitle, auth))}` : ""}`
-      : asURL(path, auth);
-
-const getSubtitle = (library: Item[], item: Item): Item | undefined =>
-  (
-    (isEpisode(item)
-      ? library.filter(
-          (x) =>
-            isEpisode(x) &&
-            x.type.includes("subtitle") &&
-            x.meta.show === item.meta.show &&
-            x.meta.season === item.meta.season &&
-            x.meta.episode === item.meta.episode,
-        )
-      : isFilm(item)
-        ? library.filter(
-            (x) =>
-              isFilm(x) &&
-              x.type.includes("subtitle") &&
-              x.meta.title === item.meta.title,
-          )
-        : []) as (Item & { meta: { language: string } })[]
-  ).sort(
-    (a, b) =>
-      ([a.meta.language, null, b.meta.language].findIndex((x) => x === "en") +
-        1 || 2) - 2,
-  )[0];
-
 const Message = styled("p")`
   margin: var(--header-height);
   padding: 4vmin;
@@ -108,7 +71,7 @@ const Message = styled("p")`
 const mainContainerClass = css`
   display: flex;
   flex-direction: column;
-  min-height: calc(100dvh - var(--header-height));
+  min-height: calc(100dvh - var(--header-height) - var(--footer-height));
   & > a {
     flex-grow: 1;
     font-size: 10vh;
@@ -225,12 +188,9 @@ export const App = () => {
       </>
     );
   }
-  const stateWithSetter = useStorage<State>(
-    "state",
-    {
-      history: [],
-      queue: [],
-    },
+  const [replicated, setReplicated] = useStorage<HistoryItem[]>(
+    "ump-state",
+    [],
     {
       replacer: function (k, v) {
         return k === "date" && v instanceof Date && !isNaN(this[k]?.getTime())
@@ -242,10 +202,30 @@ export const App = () => {
           ({
             date: () =>
               v.match(/.*\[.*\/.*\]/) ? new Date(v.replace(/\[.*\]$/, "")) : v,
+            action: () => (v === "play" ? "pause" : v),
           })[k] ?? (() => v)
         )(),
     },
   );
+  const dispatch = useCallback(
+    (update: StateUpdater<HistoryItem[]> | HistoryItem) =>
+      setReplicated(
+        Array.isArray(update) || update instanceof Function
+          ? update
+          : (x) => {
+              return x.concat([update]);
+            },
+      ),
+    [setReplicated],
+  );
+  const stateWithSetter = useMemo<[State, Dispatch<StateUpdate>]>(() => {
+    return [
+      {
+        history: replicated,
+      },
+      dispatch,
+    ];
+  }, [replicated]);
   const [uiName, setUiName] = useState("Netnix");
   return (
     <AuthContext.Provider value={auth}>

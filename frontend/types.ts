@@ -1,3 +1,5 @@
+import { StateUpdater } from "preact/hooks";
+
 export interface EpisodeMeta {
   show: string;
   season: string;
@@ -40,9 +42,13 @@ export interface Item {
   type: ("video" | "music" | "subtitle" | "artwork")[];
 }
 
-export type HistoryItem = Pick<Item, "path"> & { date: Date };
+export type HistoryItem = Pick<Item, "path"> & {
+  date: Date;
+  action: "play" | "pause" | "end" | "skip";
+};
 
 export interface State {
   history: HistoryItem[];
-  queue: Item[];
 }
+
+export type StateUpdate = StateUpdater<HistoryItem[]> | HistoryItem;

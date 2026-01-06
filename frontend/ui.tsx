@@ -1,6 +1,10 @@
 import { FunctionComponent as FC } from "preact";
+import { useContext } from "preact/hooks";
 import { css, styled } from "goober";
 import { Link } from "wouter-preact";
+import { PlayerElement } from "./player.tsx";
+import { playState } from "./playState.ts";
+import { LibraryContext, StateContext } from "./context.ts";
 
 export const directoryContainerClass = css`
   @media (min-width: 1000px) {
@@ -121,6 +125,40 @@ const Header = styled("header")`
   }
 `;
 
+const Footer = styled("div")`
+  display: flex;
+  flex-direction: row;
+  height: var(--footer-height);
+  vertical-align: middle;
+  background-color: var(--header-color);
+  font-size: calc(var(--header-height) * 0.5);
+  padding: 0 0;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+`;
+
+const ControlsContainer = styled("div")`
+  height: var(--footer-height);
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  vertical-align: middle;
+  font-size: calc(var(--header-height) * 0.5);
+  padding: 0;
+  & > span {
+    flex: 1;
+    text-align: center;
+    line-height: calc(var(--footer-height) - 6px);
+  }
+  & > span.button {
+    flex: 0;
+    min-width: var(--header-height);
+    cursor: pointer;
+  }
+`;
+
 const HeaderLink = styled("a")`
   position: absolute;
   left: 0;
@@ -138,7 +176,41 @@ const HeaderLink = styled("a")`
   }
 `;
 
-export const Chrome: FC<{ name: string }> = ({ name, children }) => (
+const Controls: FC = () => {
+  const [state, setState] = useContext(StateContext);
+  const library = useContext(LibraryContext);
+  const currentLog = state.history.find((x) =>
+    ["play", "pause"].includes(x.action),
+  );
+  const current = library.find((x) => x.path === currentLog?.path) ?? null;
+  const playing = currentLog?.action === "play";
+  return (
+    <ControlsContainer>
+      {playing ? (
+        <span
+          className="button"
+          style={{ fontSize: "150%" }}
+          onClick={() => setState(playState("pause"))}
+        >
+          ⏸︎
+        </span>
+      ) : (
+        <span className="button" onClick={() => setState(playState("play"))}>
+          ▶︎
+        </span>
+      )}
+      <span>
+        {"title" in (current?.meta ?? {})
+          ? (current?.meta as { title: string }).title
+          : undefined}
+      </span>
+    </ControlsContainer>
+  );
+};
+
+export const Chrome: FC<{
+  name: string;
+}> = ({ name, children }) => (
   <>
     <Header>
       {location.hash && (
@@ -157,5 +229,10 @@ export const Chrome: FC<{ name: string }> = ({ name, children }) => (
     </Header>
     <div style={{ height: "var(--header-height)" }} />
     {children}
+    <div style={{ height: "var(--footer-height)" }} />
+    <Footer>
+      <PlayerElement />
+      <Controls />
+    </Footer>
   </>
 );
