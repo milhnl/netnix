@@ -146,6 +146,9 @@ const Footer = styled("div")`
 const ControlsContainer = styled("div")`
   height: var(--footer-height);
   width: 100%;
+`;
+
+const InnerControlsContainer = styled("div")`
   display: flex;
   flex-direction: row;
   vertical-align: middle;
@@ -160,6 +163,35 @@ const ControlsContainer = styled("div")`
     flex: 0;
     min-width: var(--header-height);
     cursor: pointer;
+  }
+`;
+
+const Progress = styled("input")`
+  --progress-color: rgba(0.5, 0.5, 0.5, 0.3);
+  display: block;
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  cursor: pointer;
+  outline: none;
+  border-radius: 0;
+  margin: 0;
+
+  height: 6px;
+  background: transparent;
+  border-radius: 0;
+  transition: 0.2s ease-in-out;
+  &:hover {
+    height: 12px;
+  }
+
+  &::-webkit-slider-thumb,
+  &::-moz-range-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 0;
+    width: 0;
+    border: none;
   }
 `;
 
@@ -223,26 +255,55 @@ const Controls: FC = () => {
     }
   }, [current]);
   const playing = currentLog?.action === "play";
+  const progress =
+    (currentLog?.progress instanceof Object
+      ? currentLog?.progress.override
+      : currentLog?.progress) ?? 0;
+  const [progressOverride, setProgressOverride] = useState(
+    undefined as number | undefined,
+  );
   return (
     <ControlsContainer>
-      {playing ? (
-        <span
-          className="button"
-          style={{ fontSize: "150%" }}
-          onClick={() => setState(playState("pause"))}
-        >
-          ⏸︎
+      <Progress
+        type="range"
+        value={progressOverride ?? progress}
+        style={{
+          background: `linear-gradient(to right, var(--progress-color) ${((progressOverride ?? progress) / (current?.duration ?? 0)) * 100}%, rgba(128, 128, 128, 0.1) ${((progressOverride ?? progress) / (current?.duration ?? 0)) * 100}%)`,
+        }}
+        max={current?.duration}
+        step="any"
+        onChange={(ev: TargetedEvent<HTMLInputElement, Event>) => {
+          setProgressOverride(undefined);
+          setState(
+            playProgress({
+              override: Number((ev.target as HTMLInputElement).value),
+            }),
+          );
+        }}
+        onInput={(ev: TargetedEvent<HTMLInputElement, Event>) => {
+          setProgressOverride(Number((ev.target as HTMLInputElement).value));
+        }}
+      />
+      <InnerControlsContainer>
+        {playing ? (
+          <span
+            className="button"
+            style={{ fontSize: "150%" }}
+            onClick={() => setState(playState("pause"))}
+          >
+            ⏸︎
+          </span>
+        ) : (
+          <span className="button" onClick={() => setState(playState("play"))}>
+            ▶︎
+          </span>
+        )}
+        <span>
+          {"title" in (current?.meta ?? {})
+            ? (current?.meta as { title: string }).title
+            : undefined}
         </span>
-      ) : (
-        <span className="button" onClick={() => setState(playState("play"))}>
-          ▶︎
-        </span>
-      )}
-      <span>
-        {"title" in (current?.meta ?? {})
-          ? (current?.meta as { title: string }).title
-          : undefined}
-      </span>
+      </InnerControlsContainer>
     </ControlsContainer>
   );
 };

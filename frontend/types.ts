@@ -40,12 +40,14 @@ export interface Item<
   meta: Meta;
   path: string;
   mime: string;
+  duration?: number;
   type: ("video" | "music" | "subtitle" | "artwork")[];
 }
 
 export type HistoryItem = Pick<Item, "path"> & {
   date: Date;
   action: "play" | "pause" | "end" | "skip";
+  progress: number | { override: number };
   autoplay?: boolean;
 };
 

@@ -9,7 +9,7 @@ import {
   isAndroid,
   getCoverArt,
 } from "./utility.ts";
-import { playState, playContinue } from "./playState.ts";
+import { playState, playProgress, playContinue } from "./playState.ts";
 import { LibraryContext, StateContext } from "./context.ts";
 import { AuthContext } from "./auth.tsx";
 
@@ -72,16 +72,30 @@ export const PlayerElement: FC = () => {
   const current = library.find((x) => x.path === currentLog?.path) ?? null;
   const currentSrc = asURL(current?.path, auth);
   const playing = currentLog?.action === "play";
+  const timeOverride =
+    currentLog?.progress instanceof Object
+      ? currentLog.progress.override
+      : mediaRef.current?.src !== currentSrc
+        ? currentLog?.progress
+        : undefined;
   const sharedProps: Partial<DOMAttributes<HTMLMediaElement>> = {
     onPlay: () => playing || setState(playState("play")),
     onPause: () => playing && setState(playState("pause")),
     onEnded: () => setState(playContinue(library)),
     onCanPlay: ({ target }) =>
       playing ? (target as HTMLMediaElement).play() : undefined,
+    onTimeUpdate: (ev) => {
+      const progress = (ev.target as HTMLMediaElement | null)?.currentTime;
+      if (progress) setState(playProgress(progress));
+    },
   };
   useEffect(() => {
     playing ? mediaRef.current?.play() : mediaRef.current?.pause();
   }, [playing, mediaRef]);
+  useEffect(() => {
+    if (mediaRef.current && timeOverride)
+      mediaRef.current.currentTime = timeOverride;
+  }, [timeOverride, mediaRef]);
   if (current?.type.includes("video"))
     return (
       <video

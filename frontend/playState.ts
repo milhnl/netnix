@@ -3,13 +3,21 @@ export const playNow = (item: Item) => (history: HistoryItem[]) =>
   history
     .map((x) =>
       x.action === "play" || x.action === "pause"
-        ? { ...x, action: "end" as const }
+        ? {
+            ...x,
+            action: "end" as const,
+            //mediaRef.current!.currentTime + 10 >
+            //mediaRef.current!.duration * 0.99
+            //  ? ("end" as const)
+            //  : ("skip" as const),
+          }
         : x,
     )
     .concat([
       {
         path: item.path,
         date: new Date(),
+        progress: 0,
         action: "play" as const,
       },
     ]);
@@ -26,6 +34,18 @@ export const playState =
                 play: "pause" as const,
                 pause: "play" as const,
               }[x.action],
+          }
+        : x,
+    );
+
+export const playProgress =
+  (update: number | { override: number }) => (history: HistoryItem[]) =>
+    history.map((x) =>
+      x.action === "play" || x.action === "pause"
+        ? {
+            ...x,
+            updated: new Date(),
+            progress: update,
           }
         : x,
     );
@@ -95,6 +115,7 @@ export const playContinue = (library: Item[]) => (history: HistoryItem[]) =>
                 {
                   path: next.path,
                   date: new Date(),
+                  progress: 0,
                   action: "play",
                   autoplay,
                 },
