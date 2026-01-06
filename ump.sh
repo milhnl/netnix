@@ -328,7 +328,7 @@ ump_music_jq() {
 }
 
 hash() {
-    python -c \
+    python3 -c \
         'import sys;'$(
         )'from hashlib import sha256;'$(
         )'print(sha256(sys.argv[2].encode("utf-8")).hexdigest())' -- "$1"
