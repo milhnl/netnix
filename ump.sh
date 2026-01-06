@@ -5,13 +5,13 @@ set -eu
 . ./ump_library_jq.sh
 
 # COMMON ----------------------------------------------------------------------
-daemon() ( exec nohup "$@" >/dev/null 2>&1 & )
-die() { printf '%s\n' "$*" >&2; exit 1; }
+daemon() (exec nohup "$@" >/dev/null 2>&1 &)
+die() { if [ "$#" -gt 0 ]; then printf "%s\n" "$*" >&2; fi && exit 1; }
 exists() { command -v "$1" >/dev/null 2>&1; }
 fixed_as_regex() { echo "$1" | sed 's_[]$^*[\./]_\\&_g'; }
-fnmatch() { case "$2" in $1) return 0 ;; *) return 1 ;; esac ; }
-to_argv() { while read -r LINE; do set -- "$@" "$LINE"; done; "$@"; }
-in_dir() ( cd "$1"; shift; "$@"; )
+fnmatch() { case "$2" in $1) return 0 ;; *) return 1 ;; esac }
+to_argv() { while read -r LINE; do set -- "$@" "$LINE"; done && "$@"; }
+in_dir() (cd "$1" && shift && "$@")
 
 # PROVIDER: APPLE MUSIC -------------------------------------------------------
 ump_applemusic() {
@@ -26,9 +26,9 @@ ump_applemusic() {
                 play item 1 of results
             end tell'
         ;;
-    toggle) osascript -e 'tell application "Music" to playpause';;
-    prev) osascript -e 'tell application "Music" to previous track';;
-    next) osascript -e 'tell application "Music" to next track';;
+    toggle) osascript -e 'tell application "Music" to playpause' ;;
+    prev) osascript -e 'tell application "Music" to previous track' ;;
+    next) osascript -e 'tell application "Music" to next track' ;;
     current)
         osascript -e '
             tell application "Music"
@@ -36,7 +36,7 @@ ump_applemusic() {
                     & (name of current track) to stdout
             end tell'
         ;;
-    *) die 'Error: unsupported operation';;
+    *) die 'Error: unsupported operation' ;;
     esac
 }
 
@@ -85,8 +85,10 @@ mpv_ensure_running() {
     if ! mpv_command get_version >/dev/null 2>&1; then
         exists mpv || die "Error: mpv is not installed"
         MPV_HOME="${MPV_HOME-${XDG_CONFIG_HOME-$HOME/.config}/mpv}"
-        if ! echo "$MPV_LUA" | diff - "$MPV_HOME/scripts/ump-ext.lua" \
-                >/dev/null 2>&1; then
+        if
+            ! echo "$MPV_LUA" | diff - "$MPV_HOME/scripts/ump-ext.lua" \
+                >/dev/null 2>&1
+        then
             mkdir -p "$MPV_HOME/scripts"
             echo "$MPV_LUA" >"$MPV_HOME/scripts/ump-ext.lua"
         fi
@@ -154,7 +156,11 @@ ump_youtube_move_file() { #1:file 2:json
 ump_organise_files() {
     for json in "$UMP_DOWNLOADS"/.*.info.json; do
         video="$(ump_youtube_find_ext "$(dirname "$json")/$(basename "$json" \
-            | sed 's/^\.//;s/\.info\.json$//')")" || { rm "$json"; continue; }
+            | sed 's/^\.//;s/\.info\.json$//')")" \
+            || {
+                rm "$json"
+                continue
+            }
         ump_youtube_move_file "$video" "$json"
     done
     for trash in "$UMP_DOWNLOADS"/.ytdl-tmp-*; do
@@ -163,22 +169,23 @@ ump_organise_files() {
     done
     cat "$UMP_DOWNLOADS"/.*.json \
         | jq -r '(.extractor + " " + .id)' \
-        >"$UMP_DOWNLOADS/.ytdl-archive"
+            >"$UMP_DOWNLOADS/.ytdl-archive"
     ump_update_library
 }
 
 ump_get_json_for() {
-    path="$(echo "$1" | sed 's_^./__;s/"/\\"/g')"
+    path="$(echo "$1" | sed 's_^./__;s/"/\\"/g')" #'
     case "$1" in
-    *.aac|*.flac|*.mp3|*.wav) type='music';;
-    *.avi|*.m4v|*.mkv|*.mp4|*.mpg|*.webm)
+    *.aac | *.flac | *.mp3 | *.wav) type='music' ;;
+    *.avi | *.m4v | *.mkv | *.mp4 | *.mpg | *.webm)
         case "$PWD/$1" in
-        */[Mm]usic/*) type='music","video';;
+        */[Mm]usic/*) type='music","video' ;;
         *) [ "$PWD" = "$UMP_DOWNLOADS" ] \
-            && type='music","video' || type='video';;
-        esac;;
-    *.srt) type='subtitle';;
-    *) type='unknown';;
+            && type='music","video' || type='video' ;;
+        esac
+        ;;
+    *.srt) type='subtitle' ;;
+    *) type='unknown' ;;
     esac
     case "$type" in
     *music*)
@@ -195,7 +202,8 @@ ump_get_json_for() {
                     out = out sprintf("\"%s\":\"%s\",", field, value)
                 }
                 END { printf("{%s}", substr(out, 1, length(out) - 1)); }
-            ')";;#"'
+            ')"
+            ;;
         *.mp3)
             meta="$(mid3v2 -l "$1" | awk -vFS== '
                 BEGIN {
@@ -218,20 +226,22 @@ ump_get_json_for() {
                         out = out sprintf("\"%s\":\"%s\",", field, value)
                 }
                 END { printf("{%s}", substr(out, 1, length(out) - 1)); }
-            ')";;#"'
-        *.aac|*.wav)
-            meta='{}';;
-        *.mkv|*.mp4|*.webm)
+            ')"
+            ;;
+        *.aac | *.wav) meta='{}' ;;
+        *.mkv | *.mp4 | *.webm)
             meta=''
             full=''
             info="$(echo "$1" \
                 | sed 's_^\(.*/\)\([^/]*\)\.[^/.]*$_\1.\2.info.json_')"
             if [ -e "$info" ]; then
-                if ! meta="$(<"$info" jq -c '{
+                if
+                    ! meta="$(<"$info" jq -c '{
                             artist: (.artist // ("" | halt_error(1))),
                             title: (.track // ("" | halt_error(1))),
                             album
-                        }')"; then
+                        }')"
+                then
                     full="$(<"$info" jq -rc '.title // ""')"
                 fi
             fi
@@ -239,46 +249,58 @@ ump_get_json_for() {
                 if [ -z "$full" ]; then
                     full="$(echo "$1" | sed 's_.*/__;s/\.[^.]*$//')"
                 fi
-                full="$(echo "$full" | yt_title_clean | sed 's/"/\\"/g')"
-                if [ ._. = "$(echo "$full" \
-                        | sed 's/_//g;s/ - /_/g;s/[^_]*/./g')" ]; then
-                    meta='{"artist":"'"${full% - *}`
-                        `"'","title":"'"${full#* - }"'"}'
+                full="$(echo "$full" | yt_title_clean | sed 's/"/\\"/g')" #'
+                if
+                    [ ._. = "$(
+                        echo "$full" | sed 's/_//g;s/ - /_/g;s/[^_]*/./g'
+                    )" ]
+                then
+                    meta='{"artist":"'"${full% - *}$(
+                    )"'","title":"'"${full#* - }"'"}'
                 else
                     meta='{}'
                 fi
-            fi;;
-        *) meta='{}';;
-        esac;;
-    video|subtitle)
+            fi
+            ;;
+        *) meta='{}' ;;
+        esac
+        ;;
+    video | subtitle)
         case "$PWD/$1" in
-        */Films/*|*/Movies/*)
-            title="${path#*/}"; title="${title%.*}"
-            meta='{"title":"'"$title"'"}';;
-        */Series/*|*/TV/*)
-            show="${path#*/}"; show="${show%%/*}"
+        */Films/* | */Movies/*)
+            title="${path#*/}"
+            title="${title%.*}"
+            meta='{"title":"'"$title"'"}'
+            ;;
+        */Series/* | */TV/*)
+            show="${path#*/}"
+            show="${show%%/*}"
             number="$(echo "$path" | sed '
                 /[0-9][0-9]x[0-9][0-9]/{
                     s/.*\([0-9][0-9]\)x\([0-9][0-9]\).*/\1.\2/p
                 }
                 /[sS][0-9][0-9][eE][0-9][0-9]/{
-                    s/.*\([0-9][0-9]\)[eE]\([0-9][0-9]\)[-eE]\{0,2\}'`
-                        `'\([0-9][0-9]\)\{0,1\}.*/\1.\2-\3/
+                    s/.*\([0-9][0-9]\)[eE]\([0-9][0-9]\)[-eE]\{0,2\}'$(
+            )'\([0-9][0-9]\)\{0,1\}.*/\1.\2-\3/
                     s/-$//
                 }
                 /[0-9]\{2,3\}\.[0-9]\{2,3\}\(-[0-9]\{2,3\}\)\{0,1\}/{
-                    s/.*\([0-9]\{2,3\}\.[0-9]\{2,3\}\(-[0-9]'`
-                        `'\{2,3\}\)\{0,1\}\).*/\1/p
+                    s/.*\([0-9]\{2,3\}\.[0-9]\{2,3\}\(-[0-9]'$(
+            )'\{2,3\}\)\{0,1\}\).*/\1/p
                 }
                 d
                 ')"
             season="${number%%.*}"
             episode="${number#*.}"
-            title="${path##*/}"; title="${title#* }"; title="${title%.*}"
-            meta='{"show":"'"$show"'","title":"'"$title"'","season":"'"$season`
-                `"'","episode":"'"$episode"'"}';;
-        *) meta='{}';;
-        esac;;
+            title="${path##*/}"
+            title="${title#* }"
+            title="${title%.*}"
+            meta='{"show":"'"$show"'","title":"'"$title"'","season":"'"$(
+            )$season"'","episode":"'"$episode"'"}'
+            ;;
+        *) meta='{}' ;;
+        esac
+        ;;
     esac
     echo '{"path":"'"$path"'","type":["'"$type"'"],"meta":'"$meta"'}'
 }
@@ -286,17 +308,17 @@ ump_get_json_for() {
 ump_update_library() (
     cd "${1-$UMP_DOWNLOADS}"
     find . \( \
-            -name '*.mkv' \
-            -o -name '*.webm' \
-            -o -name '*.mp4' \
-            -o -name '*.playlist' \
-            -o -name '*.aac' \
-            -o -name '*.flac' \
-            -o -name '*.mp3' \
-            -o -name '*.wav' \
+        -name '*.mkv' \
+        -o -name '*.webm' \
+        -o -name '*.mp4' \
+        -o -name '*.playlist' \
+        -o -name '*.aac' \
+        -o -name '*.flac' \
+        -o -name '*.mp3' \
+        -o -name '*.wav' \
         \) -exec ump exec ump_get_json_for {} \; \
         | jq -sc '{ version: 0, items: . }' \
-        >".ump-library.new.json" \
+            >".ump-library.new.json" \
         && mv ".ump-library.new.json" ".ump-library.json"
 )
 
@@ -307,9 +329,9 @@ ump_music_jq() {
 
 hash() {
     python -c \
-        'import sys;'`
-        `'from hashlib import sha256;'`
-        `'print(sha256(sys.argv[2].encode("utf-8")).hexdigest())' -- "$1"
+        'import sys;'$(
+        )'from hashlib import sha256;'$(
+        )'print(sha256(sys.argv[2].encode("utf-8")).hexdigest())' -- "$1"
 }
 
 ump_youtube_download() {
@@ -334,23 +356,27 @@ ump_youtube_find_by_name() {
             | .url'
     else
         ump_music_jq '.[]
-            | select(.path | test("'".*$( \
-                for x; do jq_escape_regex "$x"; echo '.*'; done | tr -d '\n' \
-            )"'"; "i")) | .url' | sort
+            | select(.path | test("'".*$(
+            for x; do
+                jq_escape_regex "$x"
+                echo '.*'
+            done | tr -d '\n'
+        )"'"; "i")) | .url' | sort
     fi
 }
 
 ump_youtube_cached() {
     set -- "$(ump_youtube_find_by_name "$@")"
     case "$1" in
-    "") return 1;;
-    *.mkv|*.mp4|*.webm) echo "$1";;
-    *.aac|*.flac|*.mp3|*.wav) echo "$1";;
+    "") return 1 ;;
+    *.mkv | *.mp4 | *.webm) echo "$1" ;;
+    *.aac | *.flac | *.mp3 | *.wav) echo "$1" ;;
     *.playlist)
         while read -r LINE; do
-            ump_youtube_cached "$LINE" || ump_youtube_download "$LINE" ||:
-        done <"$1";;
-    *) die "ERROR: $1"; return 1;;
+            ump_youtube_cached "$LINE" || ump_youtube_download "$LINE" || :
+        done <"$1"
+        ;;
+    *) die "ERROR: $1" ;;
     esac
 }
 
@@ -368,20 +394,22 @@ ump_youtube_ui() {
 }
 
 ump_youtube_now() {
-    [ "$#" -ne 0 ] || set -- "$(ump_youtube_ui)"; [ -n "$1" ] || return 1
+    [ "$#" -ne 0 ] || set -- "$(ump_youtube_ui)"
+    [ -n "$1" ] || return 1
     {
         ump_youtube_cached "$@" || case "$*" in
-            http*) echo "$*";;
-            *) echo "ytdl://ytsearch:$*";;
+        http*) echo "$*" ;;
+        *) echo "ytdl://ytsearch:$*" ;;
         esac
     } | while read -r LINE; do
-            mpv_command loadfile "$LINE" replace
-        done
+        mpv_command loadfile "$LINE" replace
+    done
 }
 
 ump_youtube_add() {
-    [ "$#" -ne 0 ] || set -- "$(ump_youtube_ui)"; [ -n "$1" ] || return 1
-    ( ump_youtube_cached "$@" || ump_youtube_download "$@"; ) \
+    [ "$#" -ne 0 ] || set -- "$(ump_youtube_ui)"
+    [ -n "$1" ] || return 1
+    (ump_youtube_cached "$@" || ump_youtube_download "$@") \
         | while read -r LINE; do
             mpv_command loadfile "$LINE" append-play
         done
@@ -390,10 +418,10 @@ ump_youtube_add() {
 ump_youtube_current() {
     mpv_command get_property chapter-metadata/title 2>/dev/null \
         || as_mpv_command get_property metadata \
-                | ump_youtube_tell_mpv \
-                | mpv_ipc_response_jq \
-                    '(.ARTIST // .artist // ("" | halt_error(1))) +
-                        env.SEP + (.TITLE // .title)' 2>/dev/null \
+        | ump_youtube_tell_mpv \
+            | mpv_ipc_response_jq \
+                '(.ARTIST // .artist // ("" | halt_error(1))) +
+                    env.SEP + (.TITLE // .title)' 2>/dev/null \
         || mpv_command get_property media-title | sed 's/\.[^.]*$//'
 }
 
@@ -405,17 +433,20 @@ ump_youtube() {
     UMP_LIBRARIES="file:$UMP_DOWNLOADS${UMP_LIBRARIES+ $UMP_LIBRARIES}"
     [ "$1" = exec ] && [ "$2" = ump_get_json_for ] || mpv_ensure_running
     case "$1" in
-    now) shift; ump_youtube_now "$@";;
-    add) shift; ump_youtube_add "$@";;
-    toggle) mpv_command cycle pause;;
-    prev) shift; mpv_command script-binding ump-prev;;
-    next) shift; mpv_command script-binding ump-next;;
-    current) ump_youtube_current;;
-    exec) shift; "$@";;
-    rsync) shift; in_dir "$UMP_DOWNLOADS" rsync --progress -rh \
-        --exclude '*/' --include '*.mp4' --include '*.mkv' --include '*.webm' \
-        --include '.*.info.json' "$@";;
-    *) die 'Error: unsupported operation';;
+    now) shift && ump_youtube_now "$@" ;;
+    add) shift && ump_youtube_add "$@" ;;
+    toggle) mpv_command cycle pause ;;
+    prev) shift && mpv_command script-binding ump-prev ;;
+    next) shift && mpv_command script-binding ump-next ;;
+    current) ump_youtube_current ;;
+    exec) shift && "$@" ;;
+    rsync)
+        shift
+        in_dir "$UMP_DOWNLOADS" rsync --progress -rh \
+            --exclude '*/' --include '*.mp4' --include '*.mkv' \
+            --include '*.webm' --include '.*.info.json' "$@"
+        ;;
+    *) die 'Error: unsupported operation' ;;
     esac
 }
 
