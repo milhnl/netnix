@@ -44,7 +44,8 @@ export const getCoverArt = (library: Item[], item: Pick<Item, "meta">) => {
       (x) =>
         x.type.includes("artwork") &&
         isMusic(x) &&
-        x.meta.artist === item.meta.artist &&
+        (x.meta.albumartist ?? x.meta.artist) ===
+          (item.meta.albumartist ?? item.meta.artist) &&
         x.meta.album === item.meta.album,
     );
   } else return undefined;
