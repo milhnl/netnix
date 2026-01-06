@@ -39,6 +39,7 @@ export const isMusic = (
 export interface Item {
   meta: Record<never, never> | FilmMeta | EpisodeMeta | MusicMeta;
   path: string;
+  mime: string;
   type: ("video" | "music" | "subtitle" | "artwork")[];
 }
 

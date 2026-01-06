@@ -1,10 +1,14 @@
 import { FunctionComponent as FC } from "preact";
-import { useContext } from "preact/hooks";
+import { useContext, useEffect, useMemo } from "preact/hooks";
 import { css, styled } from "goober";
 import { Link } from "wouter-preact";
+import { MusicMeta, EpisodeMeta, FilmMeta } from "./types.ts";
 import { PlayerElement } from "./player.tsx";
-import { playState } from "./playState.ts";
+import { useActionHandlers } from "./mediasessionHook.ts";
+import { playState, playProgress, playContinue } from "./playState.ts";
 import { LibraryContext, StateContext } from "./context.ts";
+import { AuthContext } from "./auth.tsx";
+import { asURL, getCoverArt } from "./utility.ts";
 
 export const directoryContainerClass = css`
   @media (min-width: 1000px) {
@@ -179,10 +183,45 @@ const HeaderLink = styled("a")`
 const Controls: FC = () => {
   const [state, setState] = useContext(StateContext);
   const library = useContext(LibraryContext);
+  const auth = useContext(AuthContext);
+  const actionHandlers: {
+    [K in MediaSessionAction]?: MediaSessionActionHandler;
+  } = useMemo(
+    () =>
+      setState
+        ? {
+            play: () => setState(playState("play")),
+            pause: () => setState(playState("pause")),
+            stop: () => setState(playState("stop")),
+            nexttrack: () => setState(playContinue(library)),
+            seekto: ({ seekTime }) =>
+              setState(playProgress({ override: seekTime! })),
+          }
+        : {},
+    [setState, library],
+  );
+  useActionHandlers(actionHandlers);
   const currentLog = state.history.find((x) =>
     ["play", "pause"].includes(x.action),
   );
   const current = library.find((x) => x.path === currentLog?.path) ?? null;
+  useEffect(() => {
+    if (current && "mediaSession" in navigator) {
+      const meta = current.meta as Record<
+        keyof (MusicMeta & FilmMeta & EpisodeMeta),
+        string | undefined
+      >;
+      const artwork = getCoverArt(library, current);
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: meta.title,
+        artist: meta.artist,
+        album: meta.title,
+        artwork: artwork
+          ? [{ src: asURL(artwork.path, auth), type: artwork.mime }]
+          : [],
+      });
+    }
+  }, [current]);
   const playing = currentLog?.action === "play";
   return (
     <ControlsContainer>
