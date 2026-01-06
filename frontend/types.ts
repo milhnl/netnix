@@ -29,6 +29,7 @@ export interface MusicMeta {
   title: string;
   discnumber?: number;
   tracknumber: number;
+  genre?: string;
   date?: string;
 }
 
@@ -46,6 +47,7 @@ export interface Item {
 export type HistoryItem = Pick<Item, "path"> & {
   date: Date;
   action: "play" | "pause" | "end" | "skip";
+  autoplay?: boolean;
 };
 
 export interface State {

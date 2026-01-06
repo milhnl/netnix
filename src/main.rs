@@ -37,6 +37,8 @@ enum Metadata {
         #[serde(skip_serializing_if = "Option::is_none")]
         title: Option<String>,
         #[serde(skip_serializing_if = "Option::is_none")]
+        genre: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
         date: Option<String>,
     },
     Film {
@@ -248,6 +250,7 @@ fn get_type(
             let discnumber = flac_get_tag(&tag, "discnumber");
             let tracknumber = flac_get_tag(&tag, "tracknumber");
             let title = flac_get_tag(&tag, "title");
+            let genre = flac_get_tag(&tag, "genre");
             let date = flac_get_tag(&tag, "date");
             if let Some(parent) = path.parent() {
                 folder_meta.entry(parent.to_owned()).or_insert_with(|| {
@@ -258,6 +261,7 @@ fn get_type(
                         discnumber: None,
                         tracknumber: None,
                         title: None,
+                        genre: None,
                         date: None,
                     }
                 });
@@ -271,6 +275,7 @@ fn get_type(
                         discnumber: None,
                         tracknumber: None,
                         title: None,
+                        genre: None,
                         date: None,
                     }
                 });
@@ -287,6 +292,7 @@ fn get_type(
                     discnumber,
                     tracknumber,
                     title,
+                    genre,
                     date,
                 },
             })
@@ -299,6 +305,7 @@ fn get_type(
             let discnumber = tag.disc().map(|x| x.to_string());
             let tracknumber = tag.track().map(|x| x.to_string());
             let title = tag.title().map(|x| x.to_string());
+            let genre = tag.genre().map(|x| x.to_string());
             let date = tag
                 .year()
                 .map(|x| x.to_string())
@@ -312,6 +319,7 @@ fn get_type(
                         discnumber: None,
                         tracknumber: None,
                         title: None,
+                        genre: None,
                         date: None,
                     }
                 });
@@ -325,6 +333,7 @@ fn get_type(
                         discnumber: None,
                         tracknumber: None,
                         title: None,
+                        genre: None,
                         date: None,
                     }
                 });
@@ -341,6 +350,7 @@ fn get_type(
                     discnumber,
                     tracknumber,
                     title,
+                    genre,
                     date,
                 },
             })
@@ -376,6 +386,7 @@ fn get_type(
                         discnumber: None,
                         tracknumber: None,
                         title,
+                        genre: None,
                         date: None,
                     },
                 })
@@ -399,6 +410,7 @@ fn get_type(
                             discnumber: None,
                             tracknumber: None,
                             title,
+                            genre: None,
                             date: None,
                         }
                     },
