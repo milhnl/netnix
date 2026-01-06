@@ -10,7 +10,7 @@ export interface EpisodeMeta {
 
 export const isEpisode = (
   x: Pick<Item, "meta">,
-): x is Item & { meta: EpisodeMeta } => "show" in x.meta;
+): x is Omit<Item, "meta"> & { meta: EpisodeMeta } => "show" in x.meta;
 
 export interface FilmMeta {
   title: string;
@@ -19,7 +19,7 @@ export interface FilmMeta {
 
 export const isFilm = (
   x: Pick<Item, "meta">,
-): x is Item & { meta: FilmMeta } =>
+): x is Omit<Item, "meta"> & { meta: FilmMeta } =>
   "title" in x.meta && !("show" in x.meta) && !("artist" in x.meta);
 
 export interface MusicMeta {
@@ -35,7 +35,7 @@ export interface MusicMeta {
 
 export const isMusic = (
   x: Pick<Item, "meta">,
-): x is Item & { meta: MusicMeta } => "artist" in x.meta;
+): x is Omit<Item, "meta"> & { meta: MusicMeta } => "artist" in x.meta;
 
 export interface Item {
   meta: Record<never, never> | FilmMeta | EpisodeMeta | MusicMeta;
