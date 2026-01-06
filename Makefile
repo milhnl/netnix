@@ -23,7 +23,7 @@ format:
 	deno fmt
 
 frontend/dist/index.html: Makefile frontend/index.html frontend/index.tsx \
-		frontend/auth.tsx frontend/video.tsx frontend/context.ts \
+		frontend/auth.tsx frontend/video.tsx frontend/music.tsx frontend/context.ts \
 		frontend/utility.ts frontend/ui.tsx frontend/App.tsx
 	mkdir -p frontend/dist
 	cd frontend; deno bundle --platform browser --output dist/index.js index.tsx
