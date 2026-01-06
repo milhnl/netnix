@@ -126,7 +126,7 @@ export const Login = ({
       "animationend",
       (e) =>
         e.animationName == "onAutoFillStart" &&
-        setAuth((x) => ({
+        setAuth(() => ({
           type: "http",
           username: withCurrentValue("username", auth),
           password: withCurrentValue("password", auth),
