@@ -397,7 +397,7 @@ ump_youtube_ui() {
                     .path
                 end
         ' \
-        | shuf \
+        | { if exists shuf; then shuf; else sort -R; fi; } \
         | fzy
 }
 
