@@ -1,4 +1,4 @@
-import { Fragment, FunctionComponent as FC, h } from "preact";
+import { FunctionComponent as FC } from "preact";
 import { css, styled } from "goober";
 import { Link } from "wouter-preact";
 

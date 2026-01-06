@@ -1,4 +1,4 @@
-import { h, createContext } from "preact";
+import { createContext } from "preact";
 import { Dispatch, StateUpdater, useCallback, useEffect } from "preact/hooks";
 import { css, styled } from "goober";
 

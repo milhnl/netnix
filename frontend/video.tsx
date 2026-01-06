@@ -1,6 +1,4 @@
 import { useEffect, useContext, Dispatch, StateUpdater } from "preact/hooks";
-
-import { h, Fragment } from "preact";
 import { Switch, Route } from "wouter-preact";
 import {
   isEpisode,

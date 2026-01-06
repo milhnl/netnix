@@ -4,6 +4,7 @@
     "goober/global": "https://esm.sh/goober@2.1.16/global",
     "preact": "https://esm.sh/preact@10.27.2",
     "preact/hooks": "https://esm.sh/preact@10.27.2?path=/hooks",
+    "preact/jsx-runtime": "https://esm.sh/preact@10.27.2?path=/jsx-runtime",
     "wouter-preact": "https://esm.sh/wouter-preact@3.7.0?deps=preact@10.27.2"
   }
 }

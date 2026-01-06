@@ -1,9 +1,8 @@
 {
   "compilerOptions": {
     "lib": ["dom", "deno.ns"],
-    "jsx": "react",
-    "jsxFactory": "h",
-    "jsxFragmentFactory": "Fragment"
+    "jsx": "react-jsx",
+    "jsxImportSource": "preact"
   },
   "importMap": "./importmap.json",
   "fmt": {
