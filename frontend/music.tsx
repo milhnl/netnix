@@ -1,7 +1,7 @@
 import { useEffect, useContext, Dispatch, StateUpdater } from "preact/hooks";
 import { Switch, Route } from "wouter-preact";
 import { AuthContext } from "./auth.tsx";
-import { LibraryContext, PlayerContext } from "./context.ts";
+import { LibraryContext } from "./context.ts";
 import { isMusic } from "./types.ts";
 import { asURL, encodeURIAll, getCoverArt } from "./utility.ts";
 import {
@@ -54,7 +54,6 @@ export const AlbumsOverview = ({
 }) => {
   useEffect(() => setUiName(artist), []);
   const library = useContext(LibraryContext);
-  const player = useContext(PlayerContext);
   const auth = useContext(AuthContext);
 
   const all = library
@@ -106,7 +105,7 @@ export const AlbumsOverview = ({
       <main className={fileContainerClass}>
         {tracks.map((item) => (
           <ItemContainer>
-            <a class="grow" onClick={() => player.play(item)}>
+            <a class="grow">
               {"title" in item.meta ? item.meta.title : "No title"}
             </a>
           </ItemContainer>
@@ -127,7 +126,6 @@ export const AlbumOverview = ({
 }) => {
   useEffect(() => setUiName(`${artist} – ${album}`), []);
   const library = useContext(LibraryContext);
-  const player = useContext(PlayerContext);
 
   const tracks = library
     .filter(isMusic)
@@ -148,7 +146,7 @@ export const AlbumOverview = ({
       {tracks.map((item) => (
         <ItemContainer>
           <span className="square">{item.meta.tracknumber}</span>
-          <a class="grow" onClick={() => player.play(item)}>
+          <a class="grow">
             {"title" in item.meta ? item.meta.title : "No title"}
           </a>
         </ItemContainer>

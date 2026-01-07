@@ -8,13 +8,13 @@ import {
 } from "preact/hooks";
 import { Route, Switch } from "wouter-preact";
 import { css, styled } from "goober";
-import { isEpisode, isFilm, Item, Player, State } from "./types.ts";
+import { isEpisode, isFilm, Item, State } from "./types.ts";
 import { useStorage } from "./state.ts";
 import { encodeURIAll, asURL, isIOS, isAndroid, isMobile } from "./utility.ts";
 import { Auth, getAuthHeader, Login, AuthContext } from "./auth.tsx";
 import { Chrome } from "./ui.tsx";
 import { VideoRoutes } from "./video.tsx";
-import { LibraryContext, StateContext, PlayerContext } from "./context.ts";
+import { LibraryContext, StateContext } from "./context.ts";
 import { MusicRoutes } from "./music.tsx";
 
 const dateFormatter = new Intl.DateTimeFormat("en", {
@@ -246,48 +246,24 @@ export const App = () => {
         )(),
     },
   );
-  const player = useMemo<Player>(
-    () => ({
-      play: (item: Item) => {
-        stateWithSetter[1](({ history, ...state }) => ({
-          ...state,
-          history: [
-            ...history,
-            {
-              path: item.path,
-              date: new Date(),
-            },
-          ],
-        }));
-        globalThis.location.href = asPlayableURL(
-          item.path,
-          getSubtitle(library, item)?.path,
-          auth,
-        );
-      },
-    }),
-    [library, auth],
-  );
   const [uiName, setUiName] = useState("Netnix");
   return (
     <AuthContext.Provider value={auth}>
       <LibraryContext.Provider value={library}>
         <StateContext.Provider value={stateWithSetter}>
-          <PlayerContext.Provider value={player}>
-            <Chrome name={uiName}>
-              <Switch>
-                <Route path="/TV" nest>
-                  <VideoRoutes setUiName={setUiName} />
-                </Route>
-                <Route path="/Music" nest>
-                  <MusicRoutes setUiName={setUiName} />
-                </Route>
-                <Route>
-                  <MainScreen setUiName={setUiName} />
-                </Route>
-              </Switch>
-            </Chrome>
-          </PlayerContext.Provider>
+          <Chrome name={uiName}>
+            <Switch>
+              <Route path="/TV" nest>
+                <VideoRoutes setUiName={setUiName} />
+              </Route>
+              <Route path="/Music" nest>
+                <MusicRoutes setUiName={setUiName} />
+              </Route>
+              <Route>
+                <MainScreen setUiName={setUiName} />
+              </Route>
+            </Switch>
+          </Chrome>
         </StateContext.Provider>
       </LibraryContext.Provider>
     </AuthContext.Provider>

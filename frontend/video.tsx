@@ -1,16 +1,9 @@
 import { useEffect, useContext, Dispatch, StateUpdater } from "preact/hooks";
 import { Switch, Route } from "wouter-preact";
-import {
-  isEpisode,
-  EpisodeMeta,
-  isFilm,
-  Item,
-  Player,
-  HistoryItem,
-} from "./types.ts";
+import { isEpisode, EpisodeMeta, isFilm, Item, HistoryItem } from "./types.ts";
 import { asURL, encodeURIAll, getCoverArt } from "./utility.ts";
 import { AuthContext } from "./auth.tsx";
-import { LibraryContext, StateContext, PlayerContext } from "./context.ts";
+import { LibraryContext, StateContext } from "./context.ts";
 
 import {
   directoryContainerClass,
@@ -19,45 +12,36 @@ import {
   ItemContainer,
 } from "./ui.tsx";
 
-export const ListItem = ({ item, player }: { item: Item; player: Player }) => (
-  <ItemContainer>
-    <a class="grow" onClick={() => player.play(item)}>
-      {"title" in item.meta ? item.meta.title : "No title"}
-    </a>
-  </ItemContainer>
-);
-
 export const EpisodeItem = ({
   item,
-  player,
   history,
 }: {
   item: Item & { meta: EpisodeMeta };
   bg?: string;
-  player: Player;
   history: HistoryItem[];
-}) => (
-  <ItemContainer>
-    <span class="square">{item.meta.season}</span>
-    <span class="square">{item.meta.episode}</span>
-    <a
-      class="grow"
-      style={
-        history.some(
-          (x) =>
-            (x instanceof Object
-              ? (x as Exclude<typeof x, string>).path
-              : x) == item.path,
-        )
-          ? { opacity: 0.5 }
-          : undefined
-      }
-      onClick={() => player.play(item)}
-    >
-      {"title" in item.meta ? item.meta.title : "No title"}
-    </a>
-  </ItemContainer>
-);
+}) => {
+  return (
+    <ItemContainer>
+      <span class="square">{item.meta.season}</span>
+      <span class="square">{item.meta.episode}</span>
+      <a
+        class="grow"
+        style={
+          history.some(
+            (x) =>
+              (x instanceof Object
+                ? (x as Exclude<typeof x, string>).path
+                : x) == item.path,
+          )
+            ? { opacity: 0.5 }
+            : undefined
+        }
+      >
+        {"title" in item.meta ? item.meta.title : "No title"}
+      </a>
+    </ItemContainer>
+  );
+};
 
 export const SeriesEpisodeList = ({
   name,
@@ -69,7 +53,6 @@ export const SeriesEpisodeList = ({
   useEffect(() => setUiName(name), []);
   const library = useContext(LibraryContext);
   const [{ history }] = useContext(StateContext);
-  const player = useContext(PlayerContext);
   return (
     <main className={fileContainerClass}>
       {library
@@ -81,7 +64,7 @@ export const SeriesEpisodeList = ({
             a.meta.episode.localeCompare(b.meta.episode),
         )
         .map((x) => (
-          <EpisodeItem item={x} player={player} history={history} />
+          <EpisodeItem item={x} history={history} />
         ))}
     </main>
   );
@@ -123,7 +106,6 @@ export const FilmsOverview = ({
 }) => {
   useEffect(() => setUiName("Films"), []);
   const library = useContext(LibraryContext);
-  const player = useContext(PlayerContext);
   return (
     <main className={fileContainerClass}>
       {library
@@ -131,7 +113,11 @@ export const FilmsOverview = ({
         .filter((x) => x.type.length == 1 && x.type[0] === "video")
         .sort((a, b) => a.meta.title.localeCompare(b.meta.title))
         .map((x) => (
-          <ListItem item={x} player={player} />
+          <ItemContainer>
+            <a class="grow">
+              {"title" in x.meta ? x.meta.title : "No title"}
+            </a>
+          </ItemContainer>
         ))}
     </main>
   );

@@ -40,10 +40,6 @@ export interface Item {
   type: ("video" | "music" | "subtitle" | "artwork")[];
 }
 
-export interface Player {
-  play: (item: Item) => void;
-}
-
 export type HistoryItem = Pick<Item, "path"> & { date: Date };
 
 export interface State {
