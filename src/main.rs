@@ -1,7 +1,7 @@
 use directories::ProjectDirs;
 use id3::{Tag as Id3Tag, TagLike};
 use lazy_static::lazy_static;
-use metaflac::Tag as FlacTag;
+use metaflac::{block::StreamInfo, Tag as FlacTag};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
@@ -58,6 +58,8 @@ struct Item {
     mime: String,
     r#type: Vec<String>,
     meta: Metadata,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    duration: Option<f64>,
 }
 
 #[derive(Serialize)]
@@ -73,6 +75,7 @@ struct YoutubeDl {
     artist: Option<String>,
     album: Option<String>,
     track: Option<String>,
+    duration: Option<f64>,
 }
 
 fn info_json_exists(path: &Path) -> Option<YoutubeDl> {
@@ -192,9 +195,27 @@ fn get_type(
             mime: "audio/aac".to_string(),
             r#type: vec!["music".to_string()],
             meta: Metadata::Unknown {},
+            duration: None,
         }),
         "flac" => {
             let tag = FlacTag::read_from_path(&path).ok()?;
+            let duration = {
+                if let Some(StreamInfo {
+                    total_samples: samples,
+                    sample_rate: rate,
+                    ..
+                }) = tag.get_streaminfo()
+                {
+                    let duration = (*samples as f64) / ((*rate) as f64);
+                    if duration.is_nan() || duration == 0f64 {
+                        None
+                    } else {
+                        Some(duration)
+                    }
+                } else {
+                    Some(0f64)
+                }
+            };
             let artist = flac_get_tag(&tag, "artist");
             let albumartist = flac_get_tag(&tag, "albumartist");
             let album = flac_get_tag(&tag, "album");
@@ -231,6 +252,7 @@ fn get_type(
             Some(Item {
                 path,
                 mime: "audio/flac".to_string(),
+                duration,
                 r#type: vec!["music".to_string()],
                 meta: Metadata::Music {
                     artist,
@@ -284,6 +306,7 @@ fn get_type(
             Some(Item {
                 path,
                 mime: "audio/mpeg".to_string(),
+                duration: None,
                 r#type: vec!["music".to_string()],
                 meta: Metadata::Music {
                     artist,
@@ -299,6 +322,7 @@ fn get_type(
         "wav" => Some(Item {
             path,
             mime: "audio/wav".to_string(),
+            duration: None,
             r#type: vec!["music".to_string()],
             meta: Metadata::Unknown {},
         }),
@@ -313,6 +337,7 @@ fn get_type(
                 Some(Item {
                     path: path.clone(),
                     mime: get_mime_type_from_path(&path).to_string(),
+                    duration: yt_json.duration,
                     r#type: vec!["music".to_string(), "video".to_string()],
                     meta: Metadata::Music {
                         artist,
@@ -329,6 +354,7 @@ fn get_type(
                 FileType::Music => Some(Item {
                     path: path.clone(),
                     mime: get_mime_type_from_path(&path).to_string(),
+                    duration: None,
                     r#type: vec!["music".to_string(), "video".to_string()],
                     meta: {
                         let (artist, title) =
@@ -350,6 +376,7 @@ fn get_type(
                 FileType::Film => Some(Item {
                     path: path.clone(),
                     mime: get_mime_type_from_path(&path).to_string(),
+                    duration: None,
                     r#type: vec!["video".to_string()],
                     meta: Metadata::Film {
                         title: path.file_stem()?.to_str()?.to_string(),
@@ -365,6 +392,7 @@ fn get_type(
                     Some(Item {
                         path: path.clone(),
                         mime: get_mime_type_from_path(&path).to_string(),
+                        duration: None,
                         r#type: vec!["video".to_string()],
                         meta: parse_episode_title(&path),
                     })
@@ -379,6 +407,7 @@ fn get_type(
             FileType::Film => Some(Item {
                 path: path.clone(),
                 mime: get_mime_type_from_path(&path).to_string(),
+                duration: None,
                 r#type: vec!["subtitle".to_string()],
                 meta: Metadata::Film {
                     title: path.file_stem()?.to_str()?.to_string(),
@@ -387,6 +416,7 @@ fn get_type(
             FileType::Episode => Some(Item {
                 path: path.clone(),
                 mime: get_mime_type_from_path(&path).to_string(),
+                duration: None,
                 r#type: vec!["subtitle".to_string()],
                 meta: parse_episode_title(&path),
             }),
@@ -399,6 +429,7 @@ fn get_type(
                         return Some(Item {
                             path: path.clone(),
                             mime: get_mime_type_from_path(&path).to_string(),
+                            duration: None,
                             r#type: vec!["artwork".to_string()],
                             meta: meta.clone(),
                         });
