@@ -76,6 +76,8 @@ struct YoutubeDl {
     album: Option<String>,
     track: Option<String>,
     duration: Option<f64>,
+    vcodec: String,
+    acodec: String,
 }
 
 fn info_json_exists(path: &Path) -> Option<YoutubeDl> {
@@ -93,6 +95,27 @@ fn get_mime_type_from_path(path: &Path) -> &'static str {
         Some("mp4") => "video/mp4",
         Some("webm") => "video/webm",
         _ => "application/octet-stream",
+    }
+}
+
+fn get_mime_type(
+    path: &Path,
+    vcodec: Option<&str>,
+    acodec: Option<&str>,
+) -> String {
+    use std::iter::once;
+    if vcodec.is_none() && acodec.is_none() {
+        get_mime_type_from_path(path).to_owned()
+    } else {
+        format!(
+            "{};codecs={}",
+            get_mime_type_from_path(path),
+            once(vcodec)
+                .chain(once(acodec))
+                .filter_map(|x| x)
+                .collect::<Vec<&str>>()
+                .join(",")
+        )
     }
 }
 
@@ -336,7 +359,11 @@ fn get_type(
                 };
                 Some(Item {
                     path: path.clone(),
-                    mime: get_mime_type_from_path(&path).to_string(),
+                    mime: get_mime_type(
+                        &path,
+                        Some(&yt_json.vcodec),
+                        Some(&yt_json.acodec),
+                    ),
                     duration: yt_json.duration,
                     r#type: vec!["music".to_string(), "video".to_string()],
                     meta: Metadata::Music {
