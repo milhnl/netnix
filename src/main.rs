@@ -128,7 +128,7 @@ fn parse_song_title(fulltitle: &str) -> (Option<String>, Option<String>) {
         .then(|| EXTRACT.captures_iter(fulltitle).next())
         .flatten()
         .map_or((None, None), |cap| {
-            (Some((&cap[1]).to_string()), Some((&cap[2]).to_string()))
+            (Some((cap[1]).to_string()), Some((cap[2]).to_string()))
         })
 }
 
@@ -233,10 +233,10 @@ fn get_type(
                 mime: "audio/flac".to_string(),
                 r#type: vec!["music".to_string()],
                 meta: Metadata::Music {
-                    artist: artist,
-                    albumartist: albumartist,
-                    album: album,
-                    discnumber: discnumber,
+                    artist,
+                    albumartist,
+                    album,
+                    discnumber,
                     tracknumber,
                     title,
                     date,
