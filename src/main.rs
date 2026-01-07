@@ -94,6 +94,9 @@ fn get_mime_type_from_path(path: &Path) -> &'static str {
         Some("mkv") => "video/matroska",
         Some("mp4") => "video/mp4",
         Some("webm") => "video/webm",
+        Some("jpg") => "image/jpeg",
+        Some("png") => "image/png",
+        Some("webp") => "image/webp",
         _ => "application/octet-stream",
     }
 }
