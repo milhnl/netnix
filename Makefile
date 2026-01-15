@@ -28,7 +28,8 @@ frontend/dist/index.html: Makefile frontend/index.html frontend/index.tsx \
 		frontend/player.tsx frontend/playState.ts frontend/video.tsx \
 		frontend/ui.tsx frontend/utility.ts
 	mkdir -p frontend/dist
-	cd frontend; deno bundle --platform browser --output dist/index.js index.tsx
+	cd frontend; deno bundle --minify --platform browser \
+		--output dist/index.js index.tsx
 	<frontend/index.html awk '\
 		/<!-- MODULE -->/ { \
 			while (getline <"frontend/dist/index.js") print; \
