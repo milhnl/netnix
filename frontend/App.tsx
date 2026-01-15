@@ -132,15 +132,15 @@ export const MainScreen = ({
   useEffect(() => setUiName("Netnix"), []);
   return (
     <main className={mainContainerClass}>
-      <MainLink to="/TV/Films" bgText="FILMS" i={0}>
-        <span>Films</span>
-      </MainLink>
-      <MainLink to="/TV/Series" bgText="TV" i={1}>
-        <span>Series</span>
-      </MainLink>
-      <MainLink to="/Music" bgText="MUSIC" i={2}>
-        <span>Music</span>
-      </MainLink>
+      {[
+        { to: "/TV/Films", bgText: "FILMS", label: "Films" },
+        { to: "/TV/Series", bgText: "TV", label: "Series" },
+        { to: "/Music", bgText: "MUSIC", label: "Music" },
+      ].map(({ label, ...link }, i) => (
+        <MainLink i={i} {...link}>
+          {label}
+        </MainLink>
+      ))}
     </main>
   );
 };
