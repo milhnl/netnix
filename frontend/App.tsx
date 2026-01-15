@@ -15,6 +15,7 @@ import { asURL, isIOS, isAndroid, isMobile } from "./utility.ts";
 import { Auth, getAuthHeader, Login, AuthContext } from "./auth.tsx";
 import { Chrome } from "./ui.tsx";
 import { VideoRoutes } from "./video.tsx";
+import { FileViewRoutes } from "./fileView.tsx";
 import { LibraryContext, StateContext } from "./context.ts";
 import { MusicRoutes } from "./music.tsx";
 
@@ -136,6 +137,7 @@ export const MainScreen = ({
         { to: "/TV/Films", bgText: "FILMS", label: "Films" },
         { to: "/TV/Series", bgText: "TV", label: "Series" },
         { to: "/Music", bgText: "MUSIC", label: "Music" },
+        { to: "/Files", bgText: "FILES", label: "Files" },
       ].map(({ label, ...link }, i) => (
         <MainLink i={i} {...link}>
           {label}
@@ -238,6 +240,9 @@ export const App = () => {
               </Route>
               <Route path="/Music" nest>
                 <MusicRoutes setUiName={setUiName} />
+              </Route>
+              <Route path="/Files" nest>
+                <FileViewRoutes setUiName={setUiName} />
               </Route>
               <Route>
                 <MainScreen setUiName={setUiName} />
