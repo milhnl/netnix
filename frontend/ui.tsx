@@ -222,9 +222,9 @@ const Controls: FC = () => {
     () =>
       setState
         ? {
-            play: () => setState(playState("play")),
-            pause: () => setState(playState("pause")),
-            stop: () => setState(playState("stop")),
+            play: () => setState(playState(library, "play")),
+            pause: () => setState(playState(library, "pause")),
+            stop: () => setState(playState(library, "stop")),
             nexttrack: () => setState(playContinue(library)),
             seekto: ({ seekTime }) =>
               setState(playProgress({ override: seekTime! })),
@@ -289,12 +289,15 @@ const Controls: FC = () => {
           <span
             className="button"
             style={{ fontSize: "150%" }}
-            onClick={() => setState(playState("pause"))}
+            onClick={() => setState(playState(library, "pause"))}
           >
             ⏸︎
           </span>
         ) : (
-          <span className="button" onClick={() => setState(playState("play"))}>
+          <span
+            className="button"
+            onClick={() => setState(playState(library, "play"))}
+          >
             ▶︎
           </span>
         )}

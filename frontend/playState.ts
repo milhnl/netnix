@@ -1,35 +1,51 @@
 import { Item, HistoryItem, isMusic } from "./types.ts";
-export const playNow = (item: Item) => (history: HistoryItem[]) =>
-  history
-    .map((x) =>
-      x.action === "play" || x.action === "pause"
-        ? {
-            ...x,
-            action: "end" as const,
-            //mediaRef.current!.currentTime + 10 >
-            //mediaRef.current!.duration * 0.99
-            //  ? ("end" as const)
-            //  : ("skip" as const),
-          }
-        : x,
-    )
-    .concat([
-      {
-        path: item.path,
-        date: new Date(),
-        progress: 0,
-        action: "play" as const,
-      },
-    ]);
+
+const progress = (p: number | { override: number }) =>
+  p instanceof Object ? p.override : p;
+
+const endOrSkip = (library: Item[], log: HistoryItem) =>
+  progress(log.progress) + 10 >
+  (library.find((y) => y.path === log.path)?.duration ?? 0) * 0.99
+    ? ("end" as const)
+    : ("skip" as const);
+
+export const playNow =
+  (library: Item[], item: Item) => (history: HistoryItem[]) =>
+    history
+      .map((x) =>
+        x.action === "play" || x.action === "pause"
+          ? {
+              ...x,
+              action: endOrSkip(library, x),
+            }
+          : x,
+      )
+      .concat([
+        {
+          path: item.path,
+          date: new Date(),
+          progress:
+            item.type.includes("video") && !isMusic(item)
+              ? ((() => {
+                  const lastPlay = history.findLast(
+                    (x) => x.path === item.path,
+                  );
+                  if (lastPlay?.action === "skip") return lastPlay.progress;
+                })() ?? 0)
+              : 0,
+          action: "play" as const,
+        },
+      ]);
 
 export const playState =
-  (update?: "play" | "pause" | "stop") => (history: HistoryItem[]) =>
+  (library: Item[], update?: "play" | "pause" | "stop") =>
+  (history: HistoryItem[]) =>
     history.map((x) =>
       x.action === "play" || x.action === "pause"
         ? {
             ...x,
             action:
-              (update == "stop" ? ("skip" as const) : update) ??
+              (update == "stop" ? endOrSkip(library, x) : update) ??
               {
                 play: "pause" as const,
                 pause: "play" as const,
@@ -67,8 +83,8 @@ export const playContinue = (library: Item[]) => (history: HistoryItem[]) =>
       (x) =>
         (
           ({
-            play: { ...x, action: "end" as const },
-            pause: { ...x, action: "end" as const },
+            play: { ...x, action: endOrSkip(library, x) },
+            pause: { ...x, action: endOrSkip(library, x) },
           }) as Partial<Record<HistoryItem["action"], HistoryItem>>
         )[x.action] ?? x,
     )

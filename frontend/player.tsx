@@ -79,8 +79,8 @@ export const PlayerElement: FC = () => {
         ? currentLog?.progress
         : undefined;
   const sharedProps: Partial<DOMAttributes<HTMLMediaElement>> = {
-    onPlay: () => playing || setState(playState("play")),
-    onPause: () => playing && setState(playState("pause")),
+    onPlay: () => playing || setState(playState(library, "play")),
+    onPause: () => playing && setState(playState(library, "pause")),
     onEnded: () => setState(playContinue(library)),
     onCanPlay: ({ target }) =>
       playing ? (target as HTMLMediaElement).play() : undefined,

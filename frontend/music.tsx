@@ -107,7 +107,7 @@ export const AlbumsOverview = ({
       <main className={fileContainerClass}>
         {tracks.map((item) => (
           <ItemContainer>
-            <a class="grow" onClick={() => setState(playNow(item))}>
+            <a class="grow" onClick={() => setState(playNow(library, item))}>
               {"title" in item.meta ? item.meta.title : "No title"}
             </a>
           </ItemContainer>
@@ -149,7 +149,7 @@ export const AlbumOverview = ({
       {tracks.map((item) => (
         <ItemContainer>
           <span className="square">{item.meta.tracknumber}</span>
-          <a class="grow" onClick={() => setState(playNow(item))}>
+          <a class="grow" onClick={() => setState(playNow(library, item))}>
             {"title" in item.meta ? item.meta.title : "No title"}
           </a>
         </ItemContainer>

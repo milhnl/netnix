@@ -22,6 +22,7 @@ export const EpisodeItem = ({
   history: HistoryItem[];
 }) => {
   const [, setState] = useContext(StateContext);
+  const library = useContext(LibraryContext);
   return (
     <ItemContainer>
       <span class="square">{item.meta.season}</span>
@@ -38,7 +39,7 @@ export const EpisodeItem = ({
             ? { opacity: 0.5 }
             : undefined
         }
-        onClick={() => setState(playNow(item))}
+        onClick={() => setState(playNow(library, item))}
       >
         {"title" in item.meta ? item.meta.title : "No title"}
       </a>
@@ -118,7 +119,7 @@ export const FilmsOverview = ({
         .sort((a, b) => a.meta.title.localeCompare(b.meta.title))
         .map((x) => (
           <ItemContainer>
-            <a class="grow" onClick={() => setState(playNow(x))}>
+            <a class="grow" onClick={() => setState(playNow(library, x))}>
               {"title" in x.meta ? x.meta.title : "No title"}
             </a>
           </ItemContainer>
