@@ -45,10 +45,15 @@ enum Metadata {
         title: String,
     },
     Episode {
+        #[serde(skip_serializing_if = "Option::is_none")]
         show: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
         title: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
         season: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
         episode: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
         language: Option<String>,
     },
     Unknown {},
