@@ -13,6 +13,7 @@ use std::io::BufReader;
 use std::path::{Component, Path, PathBuf};
 use walkdir::WalkDir;
 
+#[derive(PartialEq)]
 enum FileType {
     Music,
     Episode,
@@ -382,7 +383,8 @@ fn get_type(
         }
         "mkv" | "mp4" | "webm" => match info_json_exists(&path) {
             Some(yt_json)
-                if yt_json.categories.iter().any(|x| x == "Music") =>
+                if yt_json.categories.iter().any(|x| x == "Music")
+                    || get_file_type_from_path(&path) == FileType::Music =>
             {
                 let (artist, title) = match (yt_json.artist, yt_json.track) {
                     (Some(artist), Some(title)) => (Some(artist), Some(title)),
