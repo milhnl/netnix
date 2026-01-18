@@ -96,9 +96,14 @@ fn get_mime_type_from_path(path: &Path) -> &'static str {
         Some("mkv") => "video/matroska",
         Some("mp4") => "video/mp4",
         Some("webm") => "video/webm",
+        Some("aac") => "audio/aac",
+        Some("flac") => "audio/flac",
+        Some("mp3") => "audio/mpeg",
+        Some("wav") => "audio/wav",
         Some("jpg") => "image/jpeg",
         Some("png") => "image/png",
         Some("webp") => "image/webp",
+        Some("srt") => "application/x-subrip",
         _ => "application/octet-stream",
     }
 }
@@ -218,13 +223,16 @@ fn get_type(
     folder_meta: &mut HashMap<PathBuf, Metadata>,
 ) -> Option<Item> {
     match path.extension()?.to_str()? {
-        "aac" => Some(Item {
-            path,
-            mime: "audio/aac".to_string(),
-            r#type: vec!["music".to_string()],
-            meta: Metadata::Unknown {},
-            duration: None,
-        }),
+        "aac" => {
+            let mime = get_mime_type_from_path(&path).to_string();
+            Some(Item {
+                path,
+                mime,
+                r#type: vec!["music".to_string()],
+                meta: Metadata::Unknown {},
+                duration: None,
+            })
+        }
         "flac" => {
             let tag = FlacTag::read_from_path(&path).ok()?;
             let duration = {
@@ -280,9 +288,10 @@ fn get_type(
                     }
                 });
             }
+            let mime = get_mime_type_from_path(&path).to_string();
             Some(Item {
                 path,
-                mime: "audio/flac".to_string(),
+                mime,
                 duration,
                 r#type: vec!["music".to_string()],
                 meta: Metadata::Music {
@@ -338,9 +347,10 @@ fn get_type(
                     }
                 });
             }
+            let mime = get_mime_type_from_path(&path).to_string();
             Some(Item {
                 path,
-                mime: "audio/mpeg".to_string(),
+                mime,
                 duration: None,
                 r#type: vec!["music".to_string()],
                 meta: Metadata::Music {
@@ -355,13 +365,16 @@ fn get_type(
                 },
             })
         }
-        "wav" => Some(Item {
-            path,
-            mime: "audio/wav".to_string(),
-            duration: None,
-            r#type: vec!["music".to_string()],
-            meta: Metadata::Unknown {},
-        }),
+        "wav" => {
+            let mime = get_mime_type_from_path(&path).to_string();
+            Some(Item {
+                path,
+                mime,
+                duration: None,
+                r#type: vec!["music".to_string()],
+                meta: Metadata::Unknown {},
+            })
+        }
         "mkv" | "mp4" | "webm" => match info_json_exists(&path) {
             Some(yt_json)
                 if yt_json.categories.iter().any(|x| x == "Music") =>
@@ -370,13 +383,14 @@ fn get_type(
                     (Some(artist), Some(title)) => (Some(artist), Some(title)),
                     (_, _) => parse_song_title(&yt_json.title),
                 };
+                let mime = get_mime_type(
+                    &path,
+                    Some(&yt_json.vcodec),
+                    Some(&yt_json.acodec),
+                );
                 Some(Item {
-                    path: path.clone(),
-                    mime: get_mime_type(
-                        &path,
-                        Some(&yt_json.vcodec),
-                        Some(&yt_json.acodec),
-                    ),
+                    path,
+                    mime,
                     duration: yt_json.duration,
                     r#type: vec!["music".to_string(), "video".to_string()],
                     meta: Metadata::Music {
@@ -391,86 +405,105 @@ fn get_type(
                     },
                 })
             }
-            _ => match get_file_type_from_path(&path) {
-                FileType::Music => Some(Item {
-                    path: path.clone(),
-                    mime: get_mime_type_from_path(&path).to_string(),
-                    duration: None,
-                    r#type: vec!["music".to_string(), "video".to_string()],
-                    meta: {
+            _ => {
+                let mime = get_mime_type_from_path(&path).to_string();
+                match get_file_type_from_path(&path) {
+                    FileType::Music => {
                         let (artist, title) =
                             match path.file_stem().and_then(|x| x.to_str()) {
                                 Some(fulltitle) => parse_song_title(fulltitle),
                                 _ => (None, None),
                             };
-                        Metadata::Music {
-                            artist,
-                            albumartist: None,
-                            album: None,
-                            discnumber: None,
-                            tracknumber: None,
-                            title,
-                            genre: None,
-                            date: None,
-                        }
-                    },
-                }),
-                FileType::Film => Some(Item {
-                    path: path.clone(),
-                    mime: get_mime_type_from_path(&path).to_string(),
-                    duration: None,
-                    r#type: vec!["video".to_string()],
-                    meta: Metadata::Film {
-                        title: path.file_stem()?.to_str()?.to_string(),
-                    },
-                }),
-                FileType::Episode => {
-                    let meta = parse_episode_title(&path);
-                    if let Some(parent) = path.parent() {
-                        folder_meta
-                            .entry(parent.to_owned())
-                            .or_insert_with(|| meta);
+                        Some(Item {
+                            path,
+                            mime,
+                            duration: None,
+                            r#type: vec![
+                                "music".to_string(),
+                                "video".to_string(),
+                            ],
+                            meta: {
+                                Metadata::Music {
+                                    artist,
+                                    albumartist: None,
+                                    album: None,
+                                    discnumber: None,
+                                    tracknumber: None,
+                                    title,
+                                    genre: None,
+                                    date: None,
+                                }
+                            },
+                        })
                     }
-                    Some(Item {
-                        path: path.clone(),
-                        mime: get_mime_type_from_path(&path).to_string(),
-                        duration: None,
-                        r#type: vec!["video".to_string()],
-                        meta: parse_episode_title(&path),
-                    })
+                    FileType::Film => {
+                        let title = path.file_stem()?.to_str()?.to_string();
+                        Some(Item {
+                            path,
+                            mime,
+                            duration: None,
+                            r#type: vec!["video".to_string()],
+                            meta: Metadata::Film { title },
+                        })
+                    }
+                    FileType::Episode => {
+                        let meta = parse_episode_title(&path);
+                        if let (Some(parent), Metadata::Episode { show, .. }) =
+                            (path.parent(), &meta)
+                        {
+                            folder_meta
+                                .entry(parent.to_owned())
+                                .or_insert_with(|| Metadata::Episode {
+                                    show: show.clone(),
+                                    title: None,
+                                    season: None,
+                                    episode: None,
+                                    language: None,
+                                });
+                        }
+                        Some(Item {
+                            path,
+                            mime,
+                            duration: None,
+                            r#type: vec!["video".to_string()],
+                            meta,
+                        })
+                    }
+                    FileType::Unknown => {
+                        eprintln!(
+                            "Skipping, type unknown: {}",
+                            path.to_str()?
+                        );
+                        None
+                    }
                 }
-                FileType::Unknown => {
-                    eprintln!("Skipping, type unknown: {}", path.to_str()?);
-                    None
-                }
-            },
+            }
         },
-        "srt" => match get_file_type_from_path(&path) {
-            FileType::Film => Some(Item {
-                path: path.clone(),
-                mime: get_mime_type_from_path(&path).to_string(),
-                duration: None,
-                r#type: vec!["subtitle".to_string()],
-                meta: Metadata::Film {
+        "srt" => {
+            let mime = get_mime_type_from_path(&path).to_string();
+            let meta = match get_file_type_from_path(&path) {
+                FileType::Film => Metadata::Film {
                     title: path.file_stem()?.to_str()?.to_string(),
                 },
-            }),
-            FileType::Episode => Some(Item {
-                path: path.clone(),
-                mime: get_mime_type_from_path(&path).to_string(),
+                FileType::Episode => parse_episode_title(&path),
+                _ => Metadata::Unknown {},
+            };
+            Some(Item {
+                path,
+                mime,
                 duration: None,
                 r#type: vec!["subtitle".to_string()],
-                meta: parse_episode_title(&path),
-            }),
-            _ => None,
-        },
+                meta,
+            })
+        }
         "jpg" | "webp" | "png" => {
+            let mime = get_mime_type_from_path(&path).to_string();
             if path.file_stem() == Some(OsStr::new("folder")) {
                 if let Some(folder) = path.parent() {
                     if let Some(meta) = folder_meta.get(folder) {
                         return Some(Item {
-                            path: path.clone(),
-                            mime: get_mime_type_from_path(&path).to_string(),
+                            path,
+                            mime,
                             duration: None,
                             r#type: vec!["artwork".to_string()],
                             meta: meta.clone(),
