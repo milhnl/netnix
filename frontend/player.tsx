@@ -19,7 +19,7 @@ const getSubtitle = (library: Item[], item: Item): Item | undefined =>
       ? library.filter(
           (x) =>
             isEpisode(x) &&
-            x.type.includes("subtitle") &&
+            x.mime == "application/x-subrip" &&
             x.meta.show === item.meta.show &&
             x.meta.season === item.meta.season &&
             x.meta.episode === item.meta.episode,
@@ -28,7 +28,7 @@ const getSubtitle = (library: Item[], item: Item): Item | undefined =>
         ? library.filter(
             (x) =>
               isFilm(x) &&
-              x.type.includes("subtitle") &&
+              x.mime == "application/x-subrip" &&
               x.meta.title === item.meta.title,
           )
         : []) as (Item & { meta: { language: string } })[]
@@ -96,7 +96,7 @@ export const PlayerElement: FC = () => {
     if (mediaRef.current && timeOverride)
       mediaRef.current.currentTime = timeOverride;
   }, [timeOverride, mediaRef]);
-  if (current?.type.includes("video"))
+  if (current?.mime.startsWith("video"))
     return (
       <video
         ref={setMediaRef}
@@ -121,7 +121,7 @@ export const PlayerElement: FC = () => {
         }}
       />
     );
-  else if (current?.type.includes("music"))
+  else if (current?.mime.startsWith("audio"))
     return (
       <>
         <img

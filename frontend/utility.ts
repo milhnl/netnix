@@ -35,14 +35,14 @@ export const getCoverArt = (library: Item[], item: Pick<Item, "meta">) => {
   if (isEpisode(item)) {
     return library.find(
       (x) =>
-        x.type.includes("artwork") &&
+        x.mime.startsWith("image") &&
         isEpisode(x) &&
         x.meta.show === item.meta.show,
     );
   } else if (isMusic(item)) {
     return library.find(
       (x) =>
-        x.type.includes("artwork") &&
+        x.mime.startsWith("image") &&
         isMusic(x) &&
         (x.meta.albumartist ?? x.meta.artist) ===
           (item.meta.albumartist ?? item.meta.artist) &&

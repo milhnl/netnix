@@ -61,7 +61,7 @@ export const SeriesEpisodeList = ({
     <main className={fileContainerClass}>
       {library
         .filter(isEpisode)
-        .filter((x) => x.type.includes("video") && x.meta.show == name)
+        .filter((x) => x.mime.startsWith("video") && x.meta.show == name)
         .sort(
           (a, b) =>
             a.meta.season.localeCompare(b.meta.season) ||
@@ -86,7 +86,7 @@ export const SeriesOverview = ({
     <main className={directoryContainerClass}>
       {library
         .filter(isEpisode)
-        .filter((x) => x.type.includes("video"))
+        .filter((x) => x.mime.startsWith("video"))
         .reduce(
           (a, n) => (a.includes(n.meta.show) ? a : [...a, n.meta.show]),
           [] as string[],
@@ -115,7 +115,7 @@ export const FilmsOverview = ({
     <main className={fileContainerClass}>
       {library
         .filter(isFilm)
-        .filter((x) => x.type.length == 1 && x.type[0] === "video")
+        .filter((x) => x.mime.startsWith("video"))
         .sort((a, b) => a.meta.title.localeCompare(b.meta.title))
         .map((x) => (
           <ItemContainer>

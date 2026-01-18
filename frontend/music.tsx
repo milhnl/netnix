@@ -24,7 +24,7 @@ export const ArtistsOverview = ({
     <main className={directoryContainerClass}>
       {library
         .filter(isMusic)
-        .filter((x) => x.type.includes("music"))
+        .filter((x) => x.mime.startsWith("audio"))
         .reduce((a, n) => {
           const artist = n.meta.albumartist ?? n.meta.artist;
           return a.includes(artist) ? a : [...a, artist];
@@ -62,7 +62,7 @@ export const AlbumsOverview = ({
     .filter(isMusic)
     .filter(
       (x) =>
-        x.type.includes("music") &&
+        (x.mime.startsWith("audio") || x.mime.startsWith("video")) &&
         (x.meta.albumartist ?? x.meta.artist) == artist,
     );
 
@@ -134,7 +134,7 @@ export const AlbumOverview = ({
     .filter(isMusic)
     .filter(
       (x) =>
-        x.type.includes("music") &&
+        (x.mime.startsWith("audio") || x.mime.startsWith("video")) &&
         (x.meta.albumartist ?? x.meta.artist) == artist &&
         x.meta.album == album,
     )

@@ -173,22 +173,30 @@ ump_organise_files() {
     ump_update_library
 }
 
+ump_get_type_for() {
+    case "$PWD/$1" in
+    */[Mm]usic/*) echo 'music' ;;
+    *) [ "$PWD" = "$UMP_DOWNLOADS" ] && echo 'music' || echo 'video' ;;
+    esac
+}
+
 ump_get_json_for() {
     path="$(echo "$1" | sed 's_^./__;s/"/\\"/g')" #'
     case "$1" in
-    *.aac | *.flac | *.mp3 | *.wav) type='music' ;;
-    *.avi | *.m4v | *.mkv | *.mp4 | *.mpg | *.webm)
-        case "$PWD/$1" in
-        */[Mm]usic/*) type='music","video' ;;
-        *) [ "$PWD" = "$UMP_DOWNLOADS" ] \
-            && type='music","video' || type='video' ;;
-        esac
-        ;;
-    *.srt) type='subtitle' ;;
-    *) type='unknown' ;;
+    *.aac) type='music' && mime='audio/aac' ;;
+    *.flac) type='music' && mime='audio/flac' ;;
+    *.mp3) type='music' && mime='audio/mpeg' ;;
+    *.wav) type='music' && mime='audio/wav' ;;
+    *.avi) type="$(ump_get_type_for "$1")" && mime='video/avi' ;;
+    *.m4v) type="$(ump_get_type_for "$1")" && mime='video/x-m4v' ;;
+    *.mkv) type="$(ump_get_type_for "$1")" && mime='video/matroska' ;;
+    *.mp4) type="$(ump_get_type_for "$1")" && mime='video/mp4' ;;
+    *.webm) type="$(ump_get_type_for "$1")" && mime='video/webm' ;;
+    *.srt) type='subtitle' && mime='application/x-subrip' ;;
+    *) type='unknown' && mime='application/octet-stream' ;;
     esac
     case "$type" in
-    *music*)
+    music)
         case "$1" in
         *.flac)
             meta="$(metaflac --export-tags-to=- "$1" | awk '
@@ -302,7 +310,7 @@ ump_get_json_for() {
         esac
         ;;
     esac
-    echo '{"path":"'"$path"'","type":["'"$type"'"],"meta":'"$meta"'}'
+    echo '{"path":"'"$path"'","mime":"'"$mime"'","meta":'"$meta"'}'
 }
 
 ump_update_library() (
@@ -323,8 +331,10 @@ ump_update_library() (
 )
 
 ump_music_jq() {
-    ump_library_jq 'map(select(.type[] | contains("music")))
-        '"${1+| $1}"''
+    ump_library_jq 'map(select((.meta | has("artist")) and (
+        (.mime | startswith("video")) or
+        (.mime | startswith("audio"))
+    ))) '"${1+| $1}"''
 }
 
 hash() {

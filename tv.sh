@@ -14,7 +14,7 @@ tv() {
         | printf "$(printf "%s" "$(cat)" | sed 's/%/\\x/g')\n" \
         >"$recently_watched"
     set -- "$(ump_library_jq '
-            map(select((.type[] | contains("video")) and (.meta | has("show")))
+            map(select((.mime | startswith("video")) and (.meta | has("show")))
                 | .meta.show) | unique | .[]' \
         | cat "$recently_watched" - \
         | awk '!_[$0]++' \
@@ -22,7 +22,7 @@ tv() {
     rm "$recently_watched"
     [ -n "$1" ] || exit 1
     ump_library_jq \
-        'map(select((.type[] | contains("video")) and (.meta | has("show"))
+        'map(select((.meta | has("show")) and (.mime | startswith("video"))
                 and .meta.show == "'"$(jq_escape_string "$1")"'"))
             | .[] | .url' \
         >"$XDG_CACHE_HOME/tv/$(echo "$1" | jq -rR @uri)"

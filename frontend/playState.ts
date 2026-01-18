@@ -25,7 +25,7 @@ export const playNow =
           path: item.path,
           date: new Date(),
           progress:
-            item.type.includes("video") && !isMusic(item)
+            item.mime.startsWith("video") && !isMusic(item)
               ? ((() => {
                   const lastPlay = history.findLast(
                     (x) => x.path === item.path,
@@ -103,7 +103,7 @@ export const playContinue = (library: Item[]) => (history: HistoryItem[]) =>
               .filter(isMusic)
               .filter(
                 (x) =>
-                  x.type.includes("music") &&
+                  (x.mime.startsWith("audio") || x.mime.startsWith("video")) &&
                   (x.meta.albumartist ?? x.meta.artist) ==
                     (current.meta.albumartist ?? current.meta.artist) &&
                   x.meta.album == current.meta.album,

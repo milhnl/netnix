@@ -41,7 +41,6 @@ export interface Item<
   path: string;
   mime: string;
   duration?: number;
-  type: ("video" | "music" | "subtitle" | "artwork")[];
 }
 
 export type HistoryItem = Pick<Item, "path"> & {

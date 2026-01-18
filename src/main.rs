@@ -64,7 +64,6 @@ enum Metadata {
 struct Item {
     path: PathBuf,
     mime: String,
-    r#type: Vec<String>,
     meta: Metadata,
     #[serde(skip_serializing_if = "Option::is_none")]
     duration: Option<f64>,
@@ -234,7 +233,6 @@ fn get_type(
             Some(Item {
                 path,
                 mime,
-                r#type: vec!["music".to_string()],
                 meta: Metadata::Unknown {},
                 duration: None,
             })
@@ -299,7 +297,6 @@ fn get_type(
                 path,
                 mime,
                 duration,
-                r#type: vec!["music".to_string()],
                 meta: Metadata::Music {
                     artist,
                     albumartist,
@@ -358,7 +355,6 @@ fn get_type(
                 path,
                 mime,
                 duration: None,
-                r#type: vec!["music".to_string()],
                 meta: Metadata::Music {
                     artist,
                     albumartist,
@@ -377,7 +373,6 @@ fn get_type(
                 path,
                 mime,
                 duration: None,
-                r#type: vec!["music".to_string()],
                 meta: Metadata::Unknown {},
             })
         }
@@ -399,7 +394,6 @@ fn get_type(
                     path,
                     mime,
                     duration: yt_json.duration,
-                    r#type: vec!["music".to_string(), "video".to_string()],
                     meta: Metadata::Music {
                         artist,
                         albumartist: None,
@@ -425,10 +419,6 @@ fn get_type(
                             path,
                             mime,
                             duration: None,
-                            r#type: vec![
-                                "music".to_string(),
-                                "video".to_string(),
-                            ],
                             meta: {
                                 Metadata::Music {
                                     artist,
@@ -449,7 +439,6 @@ fn get_type(
                             path,
                             mime,
                             duration: None,
-                            r#type: vec!["video".to_string()],
                             meta: Metadata::Film { title },
                         })
                     }
@@ -472,7 +461,6 @@ fn get_type(
                             path,
                             mime,
                             duration: None,
-                            r#type: vec!["video".to_string()],
                             meta,
                         })
                     }
@@ -499,7 +487,6 @@ fn get_type(
                 path,
                 mime,
                 duration: None,
-                r#type: vec!["subtitle".to_string()],
                 meta,
             })
         }
@@ -512,7 +499,6 @@ fn get_type(
                             path,
                             mime,
                             duration: None,
-                            r#type: vec!["artwork".to_string()],
                             meta: meta.clone(),
                         });
                     }
