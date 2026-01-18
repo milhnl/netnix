@@ -17,7 +17,7 @@ export const EpisodeItem = ({
   item,
   history,
 }: {
-  item: Item & { meta: EpisodeMeta };
+  item: Item<EpisodeMeta>;
   bg?: string;
   history: HistoryItem[];
 }) => {
