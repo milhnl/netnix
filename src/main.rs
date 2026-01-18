@@ -128,7 +128,7 @@ fn get_mime_type(
             get_mime_type_from_path(path),
             once(vcodec)
                 .chain(once(acodec))
-                .filter_map(|x| x)
+                .flatten()
                 .collect::<Vec<&str>>()
                 .join(",")
         )
