@@ -66,6 +66,24 @@ export const PlayerElement: FC = () => {
         fullscreenchangeHandler,
       );
   }, []);
+  // Work around iOS Safari not firing fullscreenchange and pausing video
+  useEffect(() => {
+    if (!(mediaRef.current instanceof HTMLVideoElement)) return;
+    const fullscreenchangeHandler = (ev: Event) => {
+      const elem = ev.target as HTMLVideoElement;
+      elem.controls = false;
+      if (!elem.paused) setTimeout(() => elem.play(), 500);
+    };
+    mediaRef.current.addEventListener(
+      "webkitendfullscreen",
+      fullscreenchangeHandler,
+    );
+    return () =>
+      document.removeEventListener(
+        "webkitendfullscreen",
+        fullscreenchangeHandler,
+      );
+  }, [mediaRef.current]);
   const currentLog = state.history.find((x) =>
     ["play", "pause"].includes(x.action),
   );
@@ -101,10 +119,15 @@ export const PlayerElement: FC = () => {
       <video
         ref={setMediaRef}
         src={currentSrc}
+        playsinline={isMusic(current)}
         {...sharedProps}
         onClick={({ target }) => {
           (target as HTMLVideoElement).controls = true;
-          (target as HTMLVideoElement).requestFullscreen();
+          if (isIOS && target && "webkitEnterFullscreen" in target)
+            (
+              target as unknown as { webkitEnterFullscreen: () => void }
+            ).webkitEnterFullscreen();
+          else (target as HTMLVideoElement).requestFullscreen();
         }}
         onError={(ev) => {
           console.error(ev);
