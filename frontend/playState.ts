@@ -77,67 +77,75 @@ const shuffleArray = function <T>(array: T[]): T[] {
   return array;
 };
 
-export const playContinue = (library: Item[]) => (history: HistoryItem[]) =>
-  history
-    .map(
-      (x) =>
-        (
-          ({
-            play: { ...x, action: endOrSkip(library, x) },
-            pause: { ...x, action: endOrSkip(library, x) },
-          }) as Partial<Record<HistoryItem["action"], HistoryItem>>
-        )[x.action] ?? x,
-    )
-    .concat(
-      (() => {
-        const currentLog = history.find((x) =>
-          ["play", "pause"].includes(x.action),
-        );
-        const current =
-          library.find((x) => x.path === currentLog?.path) ?? null;
-        if (isMusic(current!)) {
-          let next: Item | undefined = undefined;
-          let autoplay: undefined | true = undefined;
-          if (!currentLog!.autoplay) {
-            const albumtracks = library
-              .filter(isMusic)
-              .filter(
-                (x) =>
-                  (x.mime.startsWith("audio") || x.mime.startsWith("video")) &&
-                  (x.meta.albumartist ?? x.meta.artist) ==
-                    (current.meta.albumartist ?? current.meta.artist) &&
-                  x.meta.album == current.meta.album,
-              )
-              .sort(
-                ({ meta: a }, { meta: b }) =>
-                  (a.discnumber ?? 0) - (b.discnumber ?? 0) ||
-                  a.tracknumber - b.tracknumber,
+export const playContinue =
+  (library: Item[], action?: "end") => (history: HistoryItem[]) =>
+    history
+      .map(
+        (x) =>
+          (
+            ({
+              play: {
+                ...x,
+                action: action ?? endOrSkip(library, x),
+              },
+              pause: {
+                ...x,
+                action: action ?? endOrSkip(library, x),
+              },
+            }) as Partial<Record<HistoryItem["action"], HistoryItem>>
+          )[x.action] ?? x,
+      )
+      .concat(
+        (() => {
+          const currentLog = history.find((x) =>
+            ["play", "pause"].includes(x.action),
+          );
+          const current =
+            library.find((x) => x.path === currentLog?.path) ?? null;
+          if (isMusic(current!)) {
+            let next: Item | undefined = undefined;
+            let autoplay: undefined | true = undefined;
+            if (!currentLog!.autoplay) {
+              const albumtracks = library
+                .filter(isMusic)
+                .filter(
+                  (x) =>
+                    (x.mime.startsWith("audio") ||
+                      x.mime.startsWith("video")) &&
+                    (x.meta.albumartist ?? x.meta.artist) ==
+                      (current.meta.albumartist ?? current.meta.artist) &&
+                    x.meta.album == current.meta.album,
+                )
+                .sort(
+                  ({ meta: a }, { meta: b }) =>
+                    (a.discnumber ?? 0) - (b.discnumber ?? 0) ||
+                    a.tracknumber - b.tracknumber,
+                );
+              const currentIndex = albumtracks.findIndex(
+                (x) => x.path === current.path,
               );
-            const currentIndex = albumtracks.findIndex(
-              (x) => x.path === current.path,
-            );
-            if (currentIndex !== -1) next = albumtracks[currentIndex + 1];
+              if (currentIndex !== -1) next = albumtracks[currentIndex + 1];
+            }
+            if (!next && current.meta.genre) {
+              next = shuffleArray(
+                library.filter(
+                  (x) => isMusic(x) && x.meta.genre === current.meta.genre,
+                ),
+              )[0];
+              autoplay = true;
+            }
+            return next
+              ? [
+                  {
+                    path: next.path,
+                    date: new Date(),
+                    progress: 0,
+                    action: "play",
+                    autoplay,
+                  },
+                ]
+              : [];
           }
-          if (!next && current.meta.genre) {
-            next = shuffleArray(
-              library.filter(
-                (x) => isMusic(x) && x.meta.genre === current.meta.genre,
-              ),
-            )[0];
-            autoplay = true;
-          }
-          return next
-            ? [
-                {
-                  path: next.path,
-                  date: new Date(),
-                  progress: 0,
-                  action: "play",
-                  autoplay,
-                },
-              ]
-            : [];
-        }
-        return [];
-      })(),
-    );
+          return [];
+        })(),
+      );
