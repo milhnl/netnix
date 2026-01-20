@@ -12,7 +12,7 @@ tv() {
     mkdir -p "$XDG_CACHE_HOME/tv"
     ls -1t "$XDG_CACHE_HOME/tv" \
         | printf "$(printf "%s" "$(cat)" | sed 's/%/\\x/g')\n" \
-        >"$recently_watched"
+            >"$recently_watched"
     set -- "$(ump_library_jq '
             map(select((.mime | startswith("video")) and (.meta | has("show")))
                 | .meta.show) | unique | .[]' \
