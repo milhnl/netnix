@@ -198,10 +198,11 @@ fn parse_episode_title(path: &Path) -> Metadata {
         EXTRACT.captures_iter(stem.file_stem()?.to_str()?).next()
     }) {
         Some(cap) => Metadata::Episode {
-            show: path
-                .parent()
-                .and_then(|dir| dir.file_name()?.to_str())
-                .map(|x| x.to_string()),
+            show: path.canonicalize().ok().and_then(|x| {
+                x.parent()
+                    .and_then(|dir| dir.file_name()?.to_str())
+                    .map(|x| x.to_string())
+            }),
             season: cap
                 .name("s1")
                 .or_else(|| cap.name("s2"))
