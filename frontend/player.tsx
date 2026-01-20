@@ -65,7 +65,7 @@ export const PlayerElement: FC = () => {
         "fullscreenchange",
         fullscreenchangeHandler,
       );
-  });
+  }, []);
   const currentLog = state.history.find((x) =>
     ["play", "pause"].includes(x.action),
   );
