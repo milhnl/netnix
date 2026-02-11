@@ -84,6 +84,7 @@ struct YoutubeDl {
     album: Option<String>,
     album_artist: Option<String>,
     track: Option<String>,
+    release_date: Option<String>,
     duration: Option<f64>,
     vcodec: String,
     acodec: String,
@@ -224,6 +225,36 @@ fn parse_episode_title(path: &Path) -> Metadata {
         },
         _ => Metadata::Unknown {},
     }
+}
+
+fn parse_ytdlp_date(date: Option<&str>) -> Option<String> {
+    lazy_static! {
+        static ref EXTRACT: Regex = Regex::new(concat!(
+            r"(?:(?P<y1>[[:digit:]]{4})(?P<m1>[[:digit:]]{2}))(?P<d1>[[:digit:]]{2})|",
+            r"(?:(?P<y2>[[:digit:]]{4})-(?P<m2>[[:digit:]]{2})-(?P<d2>[[:digit:]]{2}))|",
+            r"(?:(?P<y3>[[:digit:]]{4}))",
+        ))
+        .unwrap();
+    };
+    date.and_then(|date| EXTRACT.captures(date))
+        .and_then(|caps| {
+            match (
+                caps.name("y1")
+                    .or_else(|| caps.name("y2"))
+                    .or_else(|| caps.name("y3")),
+                caps.name("m1").or_else(|| caps.name("m2")),
+                caps.name("d1").or_else(|| caps.name("d2")),
+            ) {
+                (Some(y), Some(m), Some(d)) => Some(format!(
+                    "{}-{}-{}",
+                    y.as_str(),
+                    m.as_str(),
+                    d.as_str()
+                )),
+                (Some(y), _, _) => Some(y.as_str().to_owned()),
+                _ => None,
+            }
+        })
 }
 
 fn flac_get_tag(tag: &FlacTag, name: &str) -> Option<String> {
@@ -405,7 +436,7 @@ fn get_type(
                     tracknumber: None,
                     title,
                     genre: None,
-                    date: None,
+                    date: parse_ytdlp_date(yt_json.release_date.as_deref()),
                 };
                 path_meta
                     .entry(path.with_extension(""))
