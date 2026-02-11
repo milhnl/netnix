@@ -82,6 +82,7 @@ struct YoutubeDl {
     title: String,
     artist: Option<String>,
     album: Option<String>,
+    album_artist: Option<String>,
     track: Option<String>,
     duration: Option<f64>,
     vcodec: String,
@@ -398,7 +399,7 @@ fn get_type(
                 );
                 let meta = Metadata::Music {
                     artist,
-                    albumartist: None,
+                    albumartist: yt_json.album_artist,
                     album: yt_json.album,
                     discnumber: None,
                     tracknumber: None,
