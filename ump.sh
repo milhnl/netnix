@@ -146,7 +146,7 @@ ump_youtube_move_file() { #1:json
         dot="${dot##*/}"
         newfullname="$UMP_DOWNLOADS/$dot$newname$ext"
         case "$ext" in
-        .webm | .mkv | .mp4) printf '%s\n' "$newfullname" ;;
+        .webm | .mkv | .mp4 | .m4a) printf '%s\n' "$newfullname" ;;
         esac
         [ "$x" = "$newfullname" ] || mv "$x" "$newfullname"
     done
@@ -179,6 +179,7 @@ ump_get_json_for() {
     *.aac) type='music' && mime='audio/aac' ;;
     *.flac) type='music' && mime='audio/flac' ;;
     *.mp3) type='music' && mime='audio/mpeg' ;;
+    *.m4a) type='music' && mime='audio/mp4' ;;
     *.wav) type='music' && mime='audio/wav' ;;
     *.avi) type="$(ump_get_type_for "$1")" && mime='video/avi' ;;
     *.m4v) type="$(ump_get_type_for "$1")" && mime='video/x-m4v' ;;
@@ -230,7 +231,7 @@ ump_get_json_for() {
             ')"
             ;;
         *.aac | *.wav) meta='{}' ;;
-        *.mkv | *.mp4 | *.webm)
+        *.mkv | *.mp4 | *.webm | *.m4a)
             meta=''
             full=''
             info="$(echo "$1" \
@@ -312,6 +313,7 @@ ump_update_library() (
         -name '*.mkv' \
         -o -name '*.webm' \
         -o -name '*.mp4' \
+        -o -name '*.m4a' \
         -o -name '*.playlist' \
         -o -name '*.aac' \
         -o -name '*.flac' \
@@ -377,7 +379,7 @@ ump_youtube_cached() {
     set -- "$(ump_youtube_find_by_name "$@")"
     case "$1" in
     "") return 1 ;;
-    *.mkv | *.mp4 | *.webm) echo "$1" ;;
+    *.mkv | *.mp4 | *.webm | *.m4a) echo "$1" ;;
     *.aac | *.flac | *.mp3 | *.wav) echo "$1" ;;
     *.playlist)
         while read -r LINE; do
@@ -451,8 +453,8 @@ ump_youtube() {
     rsync)
         shift
         in_dir "$UMP_DOWNLOADS" rsync --progress -rh \
-            --exclude '*/' --include '*.mp4' --include '*.mkv' \
-            --include '*.webm' --include '.*.info.json' "$@"
+            --exclude '*/' --include '*.mp4' --include '*.m4a' \
+            --include '*.mkv' --include '*.webm' --include '.*.info.json' "$@"
         ;;
     *) die 'Error: unsupported operation' ;;
     esac

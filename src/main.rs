@@ -103,6 +103,7 @@ fn get_mime_type_from_path(path: &Path) -> &'static str {
         Some("webm") => "video/webm",
         Some("aac") => "audio/aac",
         Some("flac") => "audio/flac",
+        Some("m4a") => "audio/mp4",
         Some("mp3") => "audio/mpeg",
         Some("wav") => "audio/wav",
         Some("jpg") => "image/jpeg",
@@ -118,16 +119,15 @@ fn get_mime_type(
     vcodec: Option<&str>,
     acodec: Option<&str>,
 ) -> String {
-    use std::iter::once;
     if vcodec.is_none() && acodec.is_none() {
         get_mime_type_from_path(path).to_owned()
     } else {
         format!(
             "{};codecs={}",
             get_mime_type_from_path(path),
-            once(vcodec)
-                .chain(once(acodec))
-                .flatten()
+            (vcodec.into_iter())
+                .chain(acodec.into_iter())
+                .filter(|x| *x != "none")
                 .collect::<Vec<&str>>()
                 .join(",")
         )
@@ -377,7 +377,7 @@ fn get_type(
                 meta: Metadata::Unknown {},
             })
         }
-        "mkv" | "mp4" | "webm" => match info_json_exists(&path) {
+        "m4a" | "mkv" | "mp4" | "webm" => match info_json_exists(&path) {
             Some(yt_json)
                 if yt_json.categories.iter().any(|x| x == "Music")
                     || get_file_type_from_path(&path) == FileType::Music =>
