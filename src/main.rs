@@ -230,7 +230,7 @@ fn flac_get_tag(tag: &FlacTag, name: &str) -> Option<String> {
 
 fn get_type(
     path: PathBuf,
-    folder_meta: &mut HashMap<PathBuf, Metadata>,
+    path_meta: &mut HashMap<PathBuf, Metadata>,
 ) -> Option<Item> {
     match path.extension()?.to_str()? {
         "aac" => {
@@ -270,7 +270,7 @@ fn get_type(
             let genre = flac_get_tag(&tag, "genre");
             let date = flac_get_tag(&tag, "date");
             if let Some(parent) = path.parent() {
-                folder_meta.entry(parent.to_owned()).or_insert_with(|| {
+                path_meta.entry(parent.to_owned()).or_insert_with(|| {
                     Metadata::Music {
                         artist: artist.clone(),
                         albumartist: albumartist.clone(),
@@ -284,7 +284,7 @@ fn get_type(
                 });
             }
             if let Some(parent) = path.parent().and_then(|x| x.parent()) {
-                folder_meta.entry(parent.to_owned()).or_insert_with(|| {
+                path_meta.entry(parent.to_owned()).or_insert_with(|| {
                     Metadata::Music {
                         artist: artist.clone(),
                         albumartist: albumartist.clone(),
@@ -328,7 +328,7 @@ fn get_type(
                 .map(|x| x.to_string())
                 .or_else(|| tag.date_recorded().map(|x| x.to_string()));
             if let Some(parent) = path.parent() {
-                folder_meta.entry(parent.to_owned()).or_insert_with(|| {
+                path_meta.entry(parent.to_owned()).or_insert_with(|| {
                     Metadata::Music {
                         artist: artist.clone(),
                         albumartist: albumartist.clone(),
@@ -342,7 +342,7 @@ fn get_type(
                 });
             }
             if let Some(parent) = path.parent().and_then(|x| x.parent()) {
-                folder_meta.entry(parent.to_owned()).or_insert_with(|| {
+                path_meta.entry(parent.to_owned()).or_insert_with(|| {
                     Metadata::Music {
                         artist: artist.clone(),
                         albumartist: albumartist.clone(),
@@ -452,15 +452,15 @@ fn get_type(
                         if let (Some(parent), Metadata::Episode { show, .. }) =
                             (path.parent(), &meta)
                         {
-                            folder_meta
-                                .entry(parent.to_owned())
-                                .or_insert_with(|| Metadata::Episode {
+                            path_meta.entry(parent.to_owned()).or_insert_with(
+                                || Metadata::Episode {
                                     show: show.clone(),
                                     title: None,
                                     season: None,
                                     episode: None,
                                     language: None,
-                                });
+                                },
+                            );
                         }
                         Some(Item {
                             path,
@@ -496,7 +496,7 @@ fn get_type(
             let mime = get_mime_type_from_path(&path).to_string();
             if path.file_stem() == Some(OsStr::new("folder")) {
                 if let Some(folder) = path.parent() {
-                    if let Some(meta) = folder_meta.get(folder) {
+                    if let Some(meta) = path_meta.get(folder) {
                         return Some(Item {
                             path,
                             mime,
@@ -527,7 +527,7 @@ fn main() {
         })
         .expect("Could not determine default library, provide one manually.");
     env::set_current_dir(&root).expect("Could not open library folder");
-    let mut folder_meta = HashMap::<PathBuf, Metadata>::new();
+    let mut path_meta = HashMap::<PathBuf, Metadata>::new();
     let library = Library {
         version: 0,
         items: WalkDir::new(&root)
@@ -556,7 +556,7 @@ fn main() {
             .filter_map(|x| {
                 get_type(
                     x.path().strip_prefix(&root).ok()?.to_path_buf(),
-                    &mut folder_meta,
+                    &mut path_meta,
                 )
             })
             .collect(),
