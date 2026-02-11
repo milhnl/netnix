@@ -349,9 +349,10 @@ ump_youtube_download() {
         --abort-on-unavailable-fragment --fragment-retries=20 \
         --default-search ytsearch \
         --download-archive "$UMP_DOWNLOADS/.ytdl-archive" \
-        --write-info-json --add-metadata \
+        --write-info-json --write-thumbnail --add-metadata \
         -P "$UMP_DOWNLOADS/$2" \
         -o "infojson:.%(fulltitle)s.%(ext)s" \
+        -o "thumbnail:.%(fulltitle)s.%(ext)s" \
         -o "%(fulltitle)s.%(ext)s" "$1" >&2
     for json in "$UMP_DOWNLOADS/$2"/.*.info.json; do
         ump_youtube_move_file "$json" || die "Downloading went wrong"

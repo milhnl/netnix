@@ -395,20 +395,24 @@ fn get_type(
                     Some(&yt_json.vcodec),
                     Some(&yt_json.acodec),
                 );
+                let meta = Metadata::Music {
+                    artist,
+                    albumartist: None,
+                    album: yt_json.album,
+                    discnumber: None,
+                    tracknumber: None,
+                    title,
+                    genre: None,
+                    date: None,
+                };
+                path_meta
+                    .entry(path.with_extension(""))
+                    .or_insert_with(|| meta.clone());
                 Some(Item {
                     path,
                     mime,
                     duration: yt_json.duration,
-                    meta: Metadata::Music {
-                        artist,
-                        albumartist: None,
-                        album: yt_json.album,
-                        discnumber: None,
-                        tracknumber: None,
-                        title,
-                        genre: None,
-                        date: None,
-                    },
+                    meta,
                 })
             }
             _ => {
@@ -505,6 +509,23 @@ fn get_type(
                         });
                     }
                 }
+            } else if let Some(meta) = (if let (Some(folder), Some(stem)) =
+                (path.parent(), path.file_stem())
+            {
+                stem.to_str()
+                    .map(|x| x.replacen('.', "", 1))
+                    .map(|x| folder.join(x))
+            } else {
+                None
+            })
+            .and_then(|x| path_meta.get(&x))
+            {
+                return Some(Item {
+                    path,
+                    mime,
+                    duration: None,
+                    meta: meta.clone(),
+                });
             }
             None
         }
@@ -542,6 +563,25 @@ fn main() {
                     (Some("folder"), _) => Ordering::Greater,
                     (_, _) => Ordering::Equal,
                 })
+                .then(
+                    match (
+                        a.path()
+                            .file_stem()
+                            .and_then(|x| x.to_str())
+                            .map(|x| x.starts_with('.'))
+                            .unwrap_or(false),
+                        b.path()
+                            .file_stem()
+                            .and_then(|x| x.to_str())
+                            .map(|x| x.starts_with('.'))
+                            .unwrap_or(false),
+                    ) {
+                        (false, false) => Ordering::Equal,
+                        (false, true) => Ordering::Less,
+                        (true, false) => Ordering::Greater,
+                        (true, true) => Ordering::Equal,
+                    },
+                )
                 .then(
                     match (a.file_type().is_dir(), b.file_type().is_dir()) {
                         (false, false) => Ordering::Equal,
