@@ -88,12 +88,16 @@ struct YoutubeDl {
 }
 
 fn info_json_exists(path: &Path) -> Option<YoutubeDl> {
-    let path = path
+    let info = path
         .parent()?
         .join(".".to_string() + path.file_stem()?.to_str()? + ".info.json");
-    let file = File::open(path).ok()?;
+    let file = File::open(info).ok()?;
     let reader = BufReader::new(file);
-    serde_json::from_reader(reader).ok()
+    serde_json::from_reader(reader)
+        .map_err(|x| {
+            eprintln!("Warning: Could not read info for {path:?}: {x:?}")
+        })
+        .ok()
 }
 
 fn get_mime_type_from_path(path: &Path) -> &'static str {
@@ -466,10 +470,7 @@ fn get_type(
                         })
                     }
                     FileType::Unknown => {
-                        eprintln!(
-                            "Skipping, type unknown: {}",
-                            path.to_str()?
-                        );
+                        eprintln!("Info: Skipping, type unknown: {path:?}");
                         None
                     }
                 }
