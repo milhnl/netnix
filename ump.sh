@@ -122,18 +122,6 @@ mpv_command() {
         | mpv_ipc_response_jq 'if . == null then empty else . end'
 }
 
-ump_youtube_find_ext() {
-    if [ -e "$1.mkv" ]; then
-        echo "$1.mkv"
-    elif [ -e "$1.webm" ]; then
-        echo "$1.webm"
-    elif [ -e "$1.mp4" ]; then
-        echo "$1.mp4"
-    else
-        return 1
-    fi
-}
-
 ump_youtube_video_name() { #1:json
     set -- "$1" "$(<"$1" jq -r '(.artist + env.SEP + .track)')"
     if fnmatch "*?$SEP?*" "$2"; then
@@ -143,25 +131,30 @@ ump_youtube_video_name() { #1:json
     fi | if exists ump-title-clean; then ump-title-clean; else cat; fi
 }
 
-ump_youtube_move_file() { #1:file 2:json
-    set -- "$1" "$2" \
-        "$(ump_youtube_video_name "$2" | sed 's_ \{0,1\}/ \{0,1\}_ - _g')"
-    set -- "$1" "$2" \
-        "$UMP_DOWNLOADS/$3.${1##*.}" "$UMP_DOWNLOADS/.$3.info.json"
-    [ "$1" = "$3" ] || mv "$1" "$3" >&2
-    [ "$2" = "$4" ] || mv "$2" "$4" >&2
-    echo "$3"
+ump_youtube_move_file() { #1:json
+    newname="$(ump_youtube_video_name "$1")"
+    for x in "$(dirname "$1")/$(
+        basename "$1" | sed 's/^\.//;s/\.info\.json$//'
+    )".* "${1%.info.json}".*; do
+        [ -e "$x" ] || return 1
+        ext="${x##*/}"
+        ext="${ext#.}"
+        oldname="${1##*/.}"
+        oldname="${oldname%.info.json}"
+        ext="${ext#"$oldname"}"
+        dot="${x%"$oldname$ext"}"
+        dot="${dot##*/}"
+        newfullname="$UMP_DOWNLOADS/$dot$newname$ext"
+        case "$ext" in
+        .webm | .mkv | .mp4) printf '%s\n' "$newfullname" ;;
+        esac
+        [ "$x" = "$newfullname" ] || mv "$x" "$newfullname"
+    done
 }
 
 ump_organise_files() {
     for json in "$UMP_DOWNLOADS"/.*.info.json; do
-        video="$(ump_youtube_find_ext "$(dirname "$json")/$(basename "$json" \
-            | sed 's/^\.//;s/\.info\.json$//')")" \
-            || {
-                rm "$json"
-                continue
-            }
-        ump_youtube_move_file "$video" "$json"
+        ump_youtube_move_file "$json" || rm "$json"
     done
     for trash in "$UMP_DOWNLOADS"/.ytdl-tmp-*; do
         [ "$trash" != "$UMP_DOWNLOADS/.ytdl-tmp-*" ] || continue
@@ -359,10 +352,7 @@ ump_youtube_download() {
         -o "infojson:.%(fulltitle)s.%(ext)s" \
         -o "%(fulltitle)s.%(ext)s" "$1" >&2
     for json in "$UMP_DOWNLOADS/$2"/.*.info.json; do
-        video="$(ump_youtube_find_ext "$(dirname "$json")/$(
-            basename "$json" | sed 's/\.\([^/]*\)\.info\.json$/\1/'
-        )")" || die "Downloading went wrong"
-        ump_youtube_move_file "$video" "$json"
+        ump_youtube_move_file "$json" || die "Downloading went wrong"
     done
     rm -rf "${UMP_DOWNLOADS:?}/$2"
 }
