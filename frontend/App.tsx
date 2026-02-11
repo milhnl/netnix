@@ -172,24 +172,6 @@ export const App = () => {
       history.pushState(null, "", current);
     }
   }, []);
-  if (auth.type !== "http" && auth.type !== "none") {
-    return (
-      <>
-        <Login
-          checkURL={asURL(".ump-library.json", { type: "none" })}
-          auth={auth}
-          setAuth={setAuth}
-        />
-        {isMobile && (
-          <Message>
-            You will need VLC player installed on your phone to actually play
-            the video files on this server. You can download it at the{" "}
-            <a href={playerAppURL}>{isIOS ? "App Store" : "Play Store"}</a>
-          </Message>
-        )}
-      </>
-    );
-  }
   const [replicated, setReplicated] = useStorage<HistoryItem[]>(
     "ump-state",
     [],
@@ -229,7 +211,23 @@ export const App = () => {
     ];
   }, [replicated]);
   const [uiName, setUiName] = useState("Netnix");
-  return (
+
+  return auth.type !== "http" && auth.type !== "none" ? (
+    <>
+      <Login
+        checkURL={asURL(".ump-library.json", { type: "none" })}
+        auth={auth}
+        setAuth={setAuth}
+      />
+      {isMobile && (
+        <Message>
+          You will need VLC player installed on your phone to actually play the
+          video files on this server. You can download it at the{" "}
+          <a href={playerAppURL}>{isIOS ? "App Store" : "Play Store"}</a>
+        </Message>
+      )}
+    </>
+  ) : (
     <AuthContext.Provider value={auth}>
       <LibraryContext.Provider value={library}>
         <StateContext.Provider value={stateWithSetter}>

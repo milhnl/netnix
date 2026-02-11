@@ -5,6 +5,11 @@
     "jsxImportSource": "preact"
   },
   "importMap": "./importmap.json",
+  "lint": {
+    "rules": {
+      "tags": ["recommended", "react", "fresh", "jsx"]
+    }
+  },
   "fmt": {
     "options": {
       "lineWidth": 79
