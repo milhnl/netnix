@@ -77,6 +77,7 @@ struct Library {
 
 #[derive(Deserialize)]
 struct YoutubeDl {
+    #[serde(default)]
     categories: Vec<String>,
     title: String,
     artist: Option<String>,
