@@ -80,6 +80,7 @@ struct YoutubeDl {
     #[serde(default)]
     categories: Vec<String>,
     title: String,
+    channel: Option<String>,
     artist: Option<String>,
     album: Option<String>,
     album_artist: Option<String>,
@@ -420,24 +421,41 @@ fn get_type(
                 if yt_json.categories.iter().any(|x| x == "Music")
                     || get_file_type_from_path(&path) == FileType::Music =>
             {
-                let (artist, title) = match (yt_json.artist, yt_json.track) {
+                let YoutubeDl {
+                    artist,
+                    title,
+                    track,
+                    album,
+                    release_date,
+                    vcodec,
+                    acodec,
+                    channel,
+                    ..
+                } = yt_json;
+                let (artist, title) = match (artist, track) {
                     (Some(artist), Some(title)) => (Some(artist), Some(title)),
-                    (_, _) => parse_song_title(&yt_json.title),
+                    (_, _) => parse_song_title(&title),
                 };
-                let mime = get_mime_type(
-                    &path,
-                    Some(&yt_json.vcodec),
-                    Some(&yt_json.acodec),
-                );
+                let mime = get_mime_type(&path, Some(&vcodec), Some(&acodec));
+                let albumartist = yt_json.album_artist.or_else(|| {
+                    let channel = channel?;
+                    let channel = channel.trim_end_matches(" - Topic");
+                    if artist.as_ref()?.starts_with(channel) {
+                        Some(channel.to_string())
+                    } else {
+                        None
+                    }
+                });
+
                 let meta = Metadata::Music {
                     artist,
-                    albumartist: yt_json.album_artist,
-                    album: yt_json.album,
+                    albumartist,
+                    album,
                     discnumber: None,
                     tracknumber: None,
                     title,
                     genre: None,
-                    date: parse_ytdlp_date(yt_json.release_date.as_deref()),
+                    date: parse_ytdlp_date(release_date.as_deref()),
                 };
                 path_meta
                     .entry(path.with_extension(""))
