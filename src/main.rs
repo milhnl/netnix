@@ -298,7 +298,8 @@ fn get_type(
             let albumartist = flac_get_tag(&tag, "albumartist");
             let album = flac_get_tag(&tag, "album");
             let discnumber = flac_get_tag(&tag, "discnumber");
-            let tracknumber = flac_get_tag(&tag, "tracknumber");
+            let tracknumber = flac_get_tag(&tag, "tracknumber")
+                .map(|x| x.trim_start_matches("0").to_string());
             let title = flac_get_tag(&tag, "title");
             let genre = flac_get_tag(&tag, "genre");
             let date = flac_get_tag(&tag, "date");
