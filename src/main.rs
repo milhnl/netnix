@@ -75,6 +75,20 @@ struct Library {
     items: Vec<Item>,
 }
 
+mod none_string {
+    use serde::{Deserialize, Deserializer};
+
+    pub fn deserialize<'de, D>(
+        deserializer: D,
+    ) -> Result<Option<String>, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        Option::<String>::deserialize(deserializer)
+            .map(|codec| codec.filter(|x| x != "none"))
+    }
+}
+
 #[derive(Deserialize)]
 struct YoutubeDl {
     #[serde(default)]
@@ -87,8 +101,10 @@ struct YoutubeDl {
     track: Option<String>,
     release_date: Option<String>,
     duration: Option<f64>,
-    vcodec: String,
-    acodec: String,
+    #[serde(default, with = "none_string")]
+    vcodec: Option<String>,
+    #[serde(default, with = "none_string")]
+    acodec: Option<String>,
 }
 
 fn info_json_exists(path: &Path) -> Option<YoutubeDl> {
@@ -135,7 +151,6 @@ fn get_mime_type(
             get_mime_type_from_path(path),
             (vcodec.into_iter())
                 .chain(acodec.into_iter())
-                .filter(|x| *x != "none")
                 .collect::<Vec<&str>>()
                 .join(",")
         )
@@ -436,7 +451,8 @@ fn get_type(
                     (Some(artist), Some(title)) => (Some(artist), Some(title)),
                     (_, _) => parse_song_title(&title),
                 };
-                let mime = get_mime_type(&path, Some(&vcodec), Some(&acodec));
+                let mime =
+                    get_mime_type(&path, vcodec.as_deref(), acodec.as_deref());
                 let albumartist = yt_json.album_artist.or_else(|| {
                     let channel = channel?;
                     let channel = channel.trim_end_matches(" - Topic");
