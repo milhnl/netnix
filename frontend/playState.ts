@@ -1,4 +1,5 @@
 import { Item, HistoryItem, isMusic } from "./types.ts";
+import { shuffleArray } from "./utility.ts";
 
 const progress = (p: number | { override: number }) =>
   p instanceof Object ? p.override : p;
@@ -65,17 +66,6 @@ export const playProgress =
           }
         : x,
     );
-
-const shuffleArray = function <T>(array: T[]): T[] {
-  let count = array.length;
-  while (count) {
-    const r = (Math.random() * count--) | 0;
-    const temp = array[count];
-    array[count] = array[r];
-    array[r] = temp;
-  }
-  return array;
-};
 
 export const playContinue =
   (library: Item[], action?: "end") => (history: HistoryItem[]) =>

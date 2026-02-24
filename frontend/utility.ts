@@ -50,3 +50,14 @@ export const getCoverArt = (library: Item[], item: Pick<Item, "meta">) => {
     );
   } else return undefined;
 };
+
+export const shuffleArray = function <T>(array: T[]): T[] {
+  let count = array.length;
+  while (count) {
+    const r = (Math.random() * count--) | 0;
+    const temp = array[count];
+    array[count] = array[r];
+    array[r] = temp;
+  }
+  return array;
+};
