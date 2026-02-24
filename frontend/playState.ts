@@ -38,34 +38,47 @@ export const playNow =
         },
       ]);
 
-export const playState =
-  (library: Item[], update?: "play" | "pause" | "stop") =>
-  (history: HistoryItem[]) =>
-    history.map((x) =>
-      x.action === "play" || x.action === "pause"
-        ? {
-            ...x,
-            action:
-              (update == "stop" ? endOrSkip(library, x) : update) ??
-              {
-                play: "pause" as const,
-                pause: "play" as const,
-              }[x.action],
-          }
-        : x,
+type CurrentHistoryItem = Omit<HistoryItem, "action"> & {
+  action: "play" | "pause";
+};
+const playUpdateCurrent =
+  (updater: (current: CurrentHistoryItem) => HistoryItem) =>
+  (history: HistoryItem[]): HistoryItem[] => {
+    const currentIndex = history.findIndex(
+      (x) => x.action === "play" || x.action === "pause",
     );
+    if (currentIndex === -1) return history;
+    const current = history[currentIndex];
+    const newCurrent = updater(current as CurrentHistoryItem);
+    if (current === newCurrent) return history;
+    const newHistory = history.slice();
+    newHistory[currentIndex] = newCurrent;
+    return newHistory;
+  };
 
-export const playProgress =
-  (update: number | { override: number }) => (history: HistoryItem[]) =>
-    history.map((x) =>
-      x.action === "play" || x.action === "pause"
-        ? {
-            ...x,
-            updated: new Date(),
-            progress: update,
-          }
-        : x,
-    );
+export const playState = (
+  library: Item[],
+  update?: "play" | "pause" | "stop",
+) =>
+  playUpdateCurrent((current) =>
+    current.action !== update
+      ? {
+          ...current,
+          action:
+            (update == "stop" ? endOrSkip(library, current) : update) ??
+            {
+              play: "pause" as const,
+              pause: "play" as const,
+            }[current.action],
+        }
+      : current,
+  );
+
+export const playProgress = (update: number | { override: number }) =>
+  playUpdateCurrent((current) => ({
+    ...current,
+    progress: update,
+  }));
 
 export const playContinue =
   (library: Item[], action?: "end") => (history: HistoryItem[]) =>
