@@ -11,6 +11,7 @@ import { Route, Switch } from "wouter-preact";
 import { css, styled } from "goober";
 import { Item, State, StateUpdate, HistoryItem } from "./types.ts";
 import { useStorage } from "./state.ts";
+import { serializeState, deserializeState } from "./playStateSync.ts";
 import { asURL, isIOS, isAndroid, isMobile } from "./utility.ts";
 import { Auth, getAuthHeader, Login, AuthContext } from "./auth.tsx";
 import { Chrome } from "./ui.tsx";
@@ -18,42 +19,6 @@ import { VideoRoutes } from "./video.tsx";
 import { FileViewRoutes } from "./fileView.tsx";
 import { LibraryContext, StateContext } from "./context.ts";
 import { MusicRoutes } from "./music.tsx";
-
-const dateFormatter = new Intl.DateTimeFormat("en", {
-  hourCycle: "h23",
-  year: "numeric",
-  month: "2-digit",
-  day: "2-digit",
-  hour: "2-digit",
-  minute: "2-digit",
-  second: "numeric",
-  fractionalSecondDigits: 3,
-  timeZoneName: "longOffset",
-});
-
-const rfc9557string = (date = new Date()) => {
-  const parts = dateFormatter
-    .formatToParts(date)
-    .filter(({ type }) => type !== "literal");
-  const {
-    year,
-    month,
-    day,
-    hour,
-    minute,
-    second,
-    fractionalSecond,
-    timeZoneName,
-  } = Object.fromEntries(parts.map(({ type, value }) => [type, value]));
-
-  const offset =
-    timeZoneName === "GMT" ? "+00:00" : timeZoneName.replace("GMT", "");
-
-  const decimal = fractionalSecond ? `.${fractionalSecond}` : "";
-  const ts = `${year}-${month}-${day}T${hour}:${minute}:${second}${decimal}`;
-
-  return `${ts}${offset}[${dateFormatter.resolvedOptions().timeZone}]`;
-};
 
 const playerAppURL = isIOS
   ? "https://apps.apple.com/us/app/vlc-for-mobile/id650377962"
@@ -176,19 +141,8 @@ export const App = () => {
     "ump-state",
     [],
     {
-      replacer: function (k, v) {
-        return k === "date" && v instanceof Date && !isNaN(this[k]?.getTime())
-          ? rfc9557string(this[k])
-          : v;
-      },
-      reviver: (k, v) =>
-        (
-          ({
-            date: () =>
-              v.match(/.*\[.*\/.*\]/) ? new Date(v.replace(/\[.*\]$/, "")) : v,
-            action: () => (v === "play" ? "pause" : v),
-          })[k] ?? (() => v)
-        )(),
+      serialize: serializeState,
+      deserialize: deserializeState,
     },
   );
   const dispatch = useCallback(

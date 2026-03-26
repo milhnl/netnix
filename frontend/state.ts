@@ -31,15 +31,14 @@ export const useStorage = <T>(
   initialValue: T,
   options: {
     storage?: Storage;
-    reviver?: Parameters<typeof JSON.parse>[1];
-    // deno-lint-ignore no-explicit-any
-    replacer?: (this: any, key: string, value: any) => any;
+    serialize?: (value: T) => string;
+    deserialize?: (value: string) => T;
   },
 ): [T, Dispatch<StateUpdater<T>>] => {
   const storage = options.storage ?? localStorage;
   const parseValue = (value: string | null) =>
     value && value !== "undefined"
-      ? JSON.parse(value, options.reviver)
+      ? (options.deserialize ? options.deserialize : JSON.parse)(value)
       : initialValue;
   const [value, setValue] = useState(() => parseValue(storage.getItem(key)));
   self.addEventListener(
@@ -47,7 +46,11 @@ export const useStorage = <T>(
     (e) => e.key === key && setValue(parseValue(e.newValue)),
   );
   useEffect(
-    () => storage.setItem(key, JSON.stringify(value, options.replacer)),
+    () =>
+      storage.setItem(
+        key,
+        (options.serialize ? options.serialize : JSON.stringify)(value),
+      ),
     [key, value, storage],
   );
   return [value, setValue];
