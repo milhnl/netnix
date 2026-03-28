@@ -43,6 +43,7 @@ export const PlayerElement: FC = () => {
   const [, navigate] = useLocation();
   const auth = useContext(AuthContext);
   const library = useContext(LibraryContext);
+  const playingSync = useRef<boolean>(false);
 
   const mediaRef = useRef<HTMLVideoElement | HTMLAudioElement | null>(null);
   const setMediaRef = (node: HTMLVideoElement | HTMLAudioElement | null) => {
@@ -72,7 +73,8 @@ export const PlayerElement: FC = () => {
     const fullscreenchangeHandler = (ev: Event) => {
       const elem = ev.target as HTMLVideoElement;
       elem.controls = false;
-      if (!elem.paused) setTimeout(() => elem.play(), 500);
+      if (!elem.paused)
+        setTimeout(() => playingSync.current || elem.play(), 500);
     };
     mediaRef.current.addEventListener(
       "webkitendfullscreen",
@@ -97,18 +99,43 @@ export const PlayerElement: FC = () => {
         ? currentLog?.progress
         : undefined;
   const sharedProps: Partial<DOMAttributes<HTMLMediaElement>> = {
-    onPlay: () => playing || setState(playState(library, "play")),
-    onPause: () => playing && setState(playState(library, "pause")),
+    onPlay: () => playingSync.current || setState(playState(library, "play")),
+    onPause: () =>
+      playingSync.current || setState(playState(library, "pause")),
     onEnded: () => setState(playContinue(library, "end")),
-    onCanPlay: ({ target }) =>
-      playing ? (target as HTMLMediaElement).play() : undefined,
+    onCanPlay: ({ target }) => {
+      if (
+        target &&
+        (target as HTMLMediaElement).played?.length === 0 &&
+        playing
+      ) {
+        playingSync.current = true;
+        (target as HTMLMediaElement).play().finally(() => {
+          playingSync.current = false;
+        });
+      }
+    },
     onTimeUpdate: (ev) => {
       const progress = (ev.target as HTMLMediaElement | null)?.currentTime;
       if (progress) setState(playProgress(progress));
     },
   };
   useEffect(() => {
-    playing ? mediaRef.current?.play() : mediaRef.current?.pause();
+    if (
+      mediaRef.current &&
+      playing == mediaRef.current.paused &&
+      mediaRef.current.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA
+    ) {
+      playingSync.current = true;
+      if (playing) {
+        mediaRef.current.play().finally(() => {
+          playingSync.current = false;
+        });
+      } else {
+        mediaRef.current.pause();
+        playingSync.current = false;
+      }
+    }
   }, [playing, mediaRef]);
   useEffect(() => {
     if (mediaRef.current && timeOverride)
