@@ -58,18 +58,13 @@ const playUpdateCurrent =
 
 export const playState = (
   library: Item[],
-  update?: "play" | "pause" | "stop",
+  update: "play" | "pause" | "stop",
 ) =>
   playUpdateCurrent((current) =>
     current.action !== update
       ? {
           ...current,
-          action:
-            (update == "stop" ? endOrSkip(library, current) : update) ??
-            {
-              play: "pause" as const,
-              pause: "play" as const,
-            }[current.action],
+          action: update == "stop" ? endOrSkip(library, current) : update,
         }
       : current,
   );
