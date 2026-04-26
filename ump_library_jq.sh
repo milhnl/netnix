@@ -22,8 +22,8 @@ ump_library_jq() {
         | jq -rs '
             map(
                 .root as $root | .items |=
-                    (if ($root | test("^file:")) then
-                        map(. + { url: ($root[5:] + .path)})
+                    (if ($root | test("^file://")) then
+                        map(. + { url: ($root[7:] + .path)})
                     else
                         map(. + { url: ($root + (.path | @uri))})
                     end)
