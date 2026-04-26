@@ -146,7 +146,7 @@ ump_youtube_move_file() { #1:json
         ext="${ext#"$oldname"}"
         dot="${x%"$oldname$ext"}"
         dot="${dot##*/}"
-        newfullname="$UMP_DOWNLOADS/$dot$newname$ext"
+        newfullname="$NETNIX_LOCAL_ROOT_MUSIC/$dot$newname$ext"
         case "$ext" in
         .webm | .mkv | .mp4 | .m4a) printf '%s\n' "$newfullname" ;;
         esac
@@ -155,23 +155,23 @@ ump_youtube_move_file() { #1:json
 }
 
 ump_organise_files() {
-    for json in "$UMP_DOWNLOADS"/.*.info.json; do
+    for json in "$NETNIX_LOCAL_ROOT_MUSIC"/.*.info.json; do
         ump_youtube_move_file "$json" || rm "$json"
     done
-    for trash in "$UMP_DOWNLOADS"/.ytdl-tmp-*; do
-        [ "$trash" != "$UMP_DOWNLOADS/.ytdl-tmp-*" ] || continue
+    for trash in "$NETNIX_LOCAL_ROOT_MUSIC"/.ytdl-tmp-*; do
+        [ "$trash" != "$NETNIX_LOCAL_ROOT_MUSIC/.ytdl-tmp-*" ] || continue
         rm "$trash"
     done
-    cat "$UMP_DOWNLOADS"/.*.json \
+    cat "$NETNIX_LOCAL_ROOT_MUSIC"/.*.json \
         | jq -r '(.extractor + " " + .id)' \
-            >"$UMP_DOWNLOADS/.ytdl-archive"
+            >"$NETNIX_LOCAL_ROOT_MUSIC/.ytdl-archive"
     ump_update_library
 }
 
 ump_get_type_for() {
     case "$PWD/$1" in
     */[Mm]usic/*) echo 'music' ;;
-    *) [ "$PWD" = "$UMP_DOWNLOADS" ] && echo 'music' || echo 'video' ;;
+    *) [ "$PWD" = "$NETNIX_LOCAL_ROOT_MUSIC" ] && echo 'music' || echo 'video' ;;
     esac
 }
 
@@ -310,7 +310,7 @@ ump_get_json_for() {
 }
 
 ump_update_library() (
-    cd "${1-$UMP_DOWNLOADS}"
+    cd "${1-$NETNIX_LOCAL_ROOT_MUSIC}"
     find . \( \
         -name '*.mkv' \
         -o -name '*.webm' \
@@ -346,20 +346,20 @@ ump_youtube_download() {
     [ -n "$2" ] || set "$1" "$(
         LC_ALL=C </dev/urandom tr -dc "[:alnum:]" | head -c 32
     )"
-    mkdir -p "$UMP_DOWNLOADS/$2"
+    mkdir -p "$NETNIX_LOCAL_ROOT_MUSIC/$2"
     yt-dlp \
         --abort-on-unavailable-fragment --fragment-retries=20 \
         --default-search ytsearch \
-        --download-archive "$UMP_DOWNLOADS/.ytdl-archive" \
+        --download-archive "$NETNIX_LOCAL_ROOT_MUSIC/.ytdl-archive" \
         --write-info-json --write-thumbnail --add-metadata \
-        -P "$UMP_DOWNLOADS/$2" \
+        -P "$NETNIX_LOCAL_ROOT_MUSIC/$2" \
         -o "infojson:.%(fulltitle)s.%(ext)s" \
         -o "thumbnail:.%(fulltitle)s.%(ext)s" \
         -o "%(fulltitle)s.%(ext)s" "$1" >&2
-    for json in "$UMP_DOWNLOADS/$2"/.*.info.json; do
+    for json in "$NETNIX_LOCAL_ROOT_MUSIC/$2"/.*.info.json; do
         ump_youtube_move_file "$json" || die "Downloading went wrong"
     done
-    rm -rf "${UMP_DOWNLOADS:?}/$2"
+    rm -rf "${NETNIX_LOCAL_ROOT_MUSIC:?}/$2"
 }
 
 ump_youtube_find_by_name() {
@@ -442,8 +442,13 @@ ump_youtube() {
     export SEP="${UMP_SEP- – }"
     MPV_SOCKET="${MPV_SOCKET:-$XDG_RUNTIME_DIR/ump_mpv_socket}"
     XDG_CACHE_HOME="${XDG_CACHE_HOME-$HOME/.cache}"
-    UMP_DOWNLOADS="${UMP_DOWNLOADS-$XDG_CACHE_HOME/ump/yt-lib}"
-    UMP_LIBRARIES="file:$UMP_DOWNLOADS${UMP_LIBRARIES+ $UMP_LIBRARIES}"
+    NETNIX_LOCAL_ROOT="${NETNIX_LOCAL_ROOT-$XDG_DATA_HOME/netnix/library}"
+    if ! fnmatch "/*" "${NETNIX_LOCAL_ROOT_MUSIC-}"; then
+        NETNIX_LOCAL_ROOT_MUSIC="$NETNIX_LOCAL_ROOT/$(
+        )${NETNIX_LOCAL_ROOT_MUSIC-Music}"
+    fi
+    NETNIX_LIBRARIES="file://$NETNIX_LOCAL_ROOT_MUSIC$(
+    )${NETNIX_LIBRARIES+ $NETNIX_LIBRARIES}"
     [ "$1" = exec ] && [ "$2" = ump_get_json_for ] || mpv_ensure_running
     case "$1" in
     now) shift && ump_youtube_now "$@" ;;
@@ -455,7 +460,7 @@ ump_youtube() {
     exec) shift && "$@" ;;
     rsync)
         shift
-        in_dir "$UMP_DOWNLOADS" rsync --progress -rh \
+        in_dir "$NETNIX_LOCAL_ROOT_MUSIC" rsync --progress -rh \
             --exclude '*/' --include '*.mp4' --include '*.m4a' \
             --include '*.mkv' --include '*.webm' --include '.*.info.json' "$@"
         ;;

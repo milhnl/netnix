@@ -18,7 +18,7 @@ ump_include_library() { #1 root
 
 ump_library_jq() {
     mkdir -p "${XDG_CACHE_HOME-$HOME/.cache}/ump"
-    { for x in $UMP_LIBRARIES; do ump_include_library "$x"; done; } \
+    { for x in $NETNIX_LIBRARIES; do ump_include_library "$x"; done; } \
         | jq -rs '
             map(
                 .root as $root | .items |=

@@ -605,13 +605,13 @@ fn main() {
     let root = env::args()
         .nth(1)
         .map(PathBuf::from)
-        .or_else(|| Some(PathBuf::from(&env::var("UMP_DOWNLOADS").ok()?)))
+        .or_else(|| Some(PathBuf::from(&env::var("NETNIX_LOCAL_ROOT").ok()?)))
         .or_else(|| {
             Some(
-                ProjectDirs::from("nl", "milh", "ump")?
+                ProjectDirs::from("nl", "milh", "netnix")?
                     .cache_dir()
                     .to_path_buf()
-                    .join("yt-lib"),
+                    .join("library"),
             )
         })
         .expect("Could not determine default library, provide one manually.");
