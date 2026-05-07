@@ -38,7 +38,9 @@ const rfc9557string = (date = new Date()) => {
 
 export const serializeState = (state: HistoryItem[]) =>
   JSON.stringify(state, function (k, v) {
-    return "date" == k && v instanceof Date && !isNaN(this[k]?.getTime())
+    return ["date", "updated"].includes(k) &&
+      this[k] instanceof Date &&
+      !isNaN(this[k]?.getTime())
       ? rfc9557string(this[k])
       : v;
   });
@@ -48,6 +50,10 @@ export const deserializeState = (state: string): HistoryItem[] =>
     (
       ({
         date: () =>
+          v.match(/^\d{4}-\d{2}-\d{2}T/)
+            ? new Date(v.replace(/\[.*\]$/, ""))
+            : v,
+        updated: () =>
           v.match(/^\d{4}-\d{2}-\d{2}T/)
             ? new Date(v.replace(/\[.*\]$/, ""))
             : v,

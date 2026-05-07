@@ -45,6 +45,7 @@ export interface Item<
 
 export type HistoryItem = Pick<Item, "path"> & {
   date: Date;
+  updated?: Date;
   action: "play" | "pause" | "end" | "skip";
   progress: number | { override: number };
   autoplay?: boolean;

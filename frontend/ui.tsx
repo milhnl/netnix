@@ -1,8 +1,23 @@
 import { TargetedEvent, FunctionComponent as FC } from "preact";
-import { useContext, useState, useEffect, useMemo } from "preact/hooks";
+import {
+  useContext,
+  useState,
+  useEffect,
+  useMemo,
+  useRef,
+  Dispatch,
+} from "preact/hooks";
+import { forwardRef } from "preact/compat";
 import { css, styled } from "goober";
 import { Link } from "wouter-preact";
-import { MusicMeta, EpisodeMeta, FilmMeta } from "./types.ts";
+import {
+  MusicMeta,
+  EpisodeMeta,
+  FilmMeta,
+  Item,
+  HistoryItem,
+  StateUpdate,
+} from "./types.ts";
 import { PlayerElement } from "./player.tsx";
 import { useActionHandlers } from "./mediasessionHook.ts";
 import { playState, playProgress, playContinue } from "./playState.ts";
@@ -166,7 +181,7 @@ const InnerControlsContainer = styled("div")`
   }
 `;
 
-const Progress = styled("input")`
+const ProgressBar = styled("input", forwardRef)`
   --progress-color: rgba(0.5, 0.5, 0.5, 0.3);
   display: block;
   -webkit-appearance: none;
@@ -212,6 +227,65 @@ const HeaderLink = styled("a")`
   }
 `;
 
+const Progress: FC<{
+  current: Item | null;
+  currentLog?: HistoryItem;
+  setState: Dispatch<StateUpdate>;
+}> = ({ current, currentLog, setState }) => {
+  const progressRef = useRef<HTMLInputElement | null>(null);
+  const playing = currentLog?.action === "play";
+  const progress =
+    (currentLog?.progress instanceof Object
+      ? currentLog?.progress.override
+      : currentLog?.progress) ?? 0;
+  const [progressOverride, setProgressOverride] = useState(
+    undefined as number | undefined,
+  );
+  useEffect(() => {
+    const callback = () => {
+      if (playing && current && progressRef.current) {
+        const actualProgress =
+          progressOverride ??
+          progress +
+            (new Date().getTime() - currentLog.updated!.getTime()) / 1000;
+        progressRef.current.value = String(actualProgress);
+        progressRef.current.style.background = `linear-gradient(to right, var(--progress-color) ${(actualProgress / (current?.duration ?? 0)) * 100}%, rgba(128, 128, 128, 0.1) ${(actualProgress / (current?.duration ?? 0)) * 100}%)`;
+        if ("mediaSession" in navigator) {
+          navigator.mediaSession.setPositionState({
+            duration: current.duration ?? 0,
+            position: actualProgress,
+          });
+        }
+      }
+    };
+    const interval = setInterval(callback, 100);
+    return () => clearInterval(interval);
+  }, [progress, progressOverride, progressRef, currentLog, playing]);
+  return (
+    <ProgressBar
+      ref={progressRef}
+      type="range"
+      value={progressOverride ?? progress}
+      style={{
+        background: `linear-gradient(to right, var(--progress-color) ${((progressOverride ?? progress) / (current?.duration ?? 0)) * 100}%, rgba(128, 128, 128, 0.1) ${((progressOverride ?? progress) / (current?.duration ?? 0)) * 100}%)`,
+      }}
+      max={current?.duration}
+      step="any"
+      onChange={(ev: TargetedEvent<HTMLInputElement, Event>) => {
+        setProgressOverride(undefined);
+        setState(
+          playProgress({
+            override: Number((ev.target as HTMLInputElement).value),
+          }),
+        );
+      }}
+      onInput={(ev: TargetedEvent<HTMLInputElement, Event>) => {
+        setProgressOverride(Number((ev.target as HTMLInputElement).value));
+      }}
+    />
+  );
+};
+
 const Controls: FC = () => {
   const [state, setState] = useContext(StateContext);
   const library = useContext(LibraryContext);
@@ -255,34 +329,12 @@ const Controls: FC = () => {
     }
   }, [current]);
   const playing = currentLog?.action === "play";
-  const progress =
-    (currentLog?.progress instanceof Object
-      ? currentLog?.progress.override
-      : currentLog?.progress) ?? 0;
-  const [progressOverride, setProgressOverride] = useState(
-    undefined as number | undefined,
-  );
   return (
     <ControlsContainer>
       <Progress
-        type="range"
-        value={progressOverride ?? progress}
-        style={{
-          background: `linear-gradient(to right, var(--progress-color) ${((progressOverride ?? progress) / (current?.duration ?? 0)) * 100}%, rgba(128, 128, 128, 0.1) ${((progressOverride ?? progress) / (current?.duration ?? 0)) * 100}%)`,
-        }}
-        max={current?.duration}
-        step="any"
-        onChange={(ev: TargetedEvent<HTMLInputElement, Event>) => {
-          setProgressOverride(undefined);
-          setState(
-            playProgress({
-              override: Number((ev.target as HTMLInputElement).value),
-            }),
-          );
-        }}
-        onInput={(ev: TargetedEvent<HTMLInputElement, Event>) => {
-          setProgressOverride(Number((ev.target as HTMLInputElement).value));
-        }}
+        current={current}
+        currentLog={currentLog}
+        setState={setState}
       />
       <InnerControlsContainer>
         {playing ? (

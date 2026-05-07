@@ -1,11 +1,11 @@
 import { Item, HistoryItem, isMusic } from "./types.ts";
 import { shuffleArray } from "./utility.ts";
 
-const progress = (p: number | { override: number }) =>
+export const readProgress = (p: number | { override: number }) =>
   p instanceof Object ? p.override : p;
 
 const endOrSkip = (library: Item[], log: HistoryItem) =>
-  progress(log.progress) + 10 >
+  readProgress(log.progress) + 10 >
   (library.find((y) => y.path === log.path)?.duration ?? 0) * 0.99
     ? ("end" as const)
     : ("skip" as const);
@@ -17,6 +17,7 @@ export const playNow =
         x.action === "play" || x.action === "pause"
           ? {
               ...x,
+              updated: new Date(),
               action: endOrSkip(library, x),
             }
           : x,
@@ -25,6 +26,7 @@ export const playNow =
         {
           path: item.path,
           date: new Date(),
+          updated: new Date(),
           progress:
             item.mime.startsWith("video") && !isMusic(item)
               ? ((() => {
@@ -49,8 +51,18 @@ const playUpdateCurrent =
     );
     if (currentIndex === -1) return history;
     const current = history[currentIndex];
-    const newCurrent = updater(current as CurrentHistoryItem);
-    if (current === newCurrent) return history;
+    const now = new Date();
+    const almostNewCurrent = {
+      ...current,
+      updated: now,
+      progress:
+        current.action === "play"
+          ? readProgress(current.progress) +
+            (now.getTime() - current.updated!.getTime()) / 1000
+          : current.progress,
+    };
+    const newCurrent = updater(almostNewCurrent as CurrentHistoryItem);
+    if (almostNewCurrent === newCurrent) return history;
     const newHistory = history.slice();
     newHistory[currentIndex] = newCurrent;
     return newHistory;
@@ -69,11 +81,27 @@ export const playState = (
       : current,
   );
 
-export const playProgress = (update: number | { override: number }) =>
-  playUpdateCurrent((current) => ({
-    ...current,
-    progress: update,
-  }));
+const cmpnums = (a: number, b: number, d: number) => Math.abs(a - b) < d;
+export const playProgress = (
+  update: number | { override: number },
+  force?: true,
+) =>
+  playUpdateCurrent((current) =>
+    typeof update === "number" &&
+    typeof current.progress === "number" &&
+    cmpnums(
+      current.progress +
+        (new Date().getTime() - current.updated!.getTime()) / 1000,
+      update,
+      5,
+    ) &&
+    !force
+      ? current
+      : {
+          ...current,
+          progress: update,
+        },
+  );
 
 export const playContinue =
   (library: Item[], action?: "end") => (history: HistoryItem[]) =>
@@ -84,10 +112,12 @@ export const playContinue =
             ({
               play: {
                 ...x,
+                updated: new Date(),
                 action: action ?? endOrSkip(library, x),
               },
               pause: {
                 ...x,
+                updated: new Date(),
                 action: action ?? endOrSkip(library, x),
               },
             }) as Partial<Record<HistoryItem["action"], HistoryItem>>
@@ -137,6 +167,7 @@ export const playContinue =
                   {
                     path: next.path,
                     date: new Date(),
+                    updated: new Date(),
                     progress: 0,
                     action: "play",
                     autoplay,
