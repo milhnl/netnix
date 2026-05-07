@@ -9,7 +9,12 @@ import {
   isAndroid,
   getCoverArt,
 } from "./utility.ts";
-import { playState, playProgress, playContinue } from "./playState.ts";
+import {
+  playState,
+  playProgress,
+  playRate,
+  playContinue,
+} from "./playState.ts";
 import { LibraryContext, StateContext } from "./context.ts";
 import { AuthContext } from "./auth.tsx";
 
@@ -117,6 +122,7 @@ export const PlayerElement: FC = () => {
       : mediaRef.current?.src !== currentSrc
         ? currentLog?.progress
         : undefined;
+  const playbackRate = currentLog?.rate;
   const sharedProps: Partial<DOMAttributes<HTMLMediaElement>> = {
     onPlay: () => playingSync.current || setState(playState(library, "play")),
     onPause: () =>
@@ -134,6 +140,8 @@ export const PlayerElement: FC = () => {
         });
       }
     },
+    onRateChange: ({ target }) =>
+      setState(playRate((target as HTMLMediaElement).playbackRate)),
     onTimeUpdate: (ev) => {
       const progress = (ev.target as HTMLMediaElement | null)?.currentTime;
       if (progress) setState(playProgress(progress));
@@ -160,6 +168,9 @@ export const PlayerElement: FC = () => {
     if (mediaRef.current && timeOverride)
       mediaRef.current.currentTime = timeOverride;
   }, [timeOverride, mediaRef]);
+  useEffect(() => {
+    if (mediaRef.current) mediaRef.current.playbackRate = playbackRate ?? 1;
+  }, [current, mediaRef, playbackRate]);
   if (current?.mime.startsWith("video"))
     return (
       <video

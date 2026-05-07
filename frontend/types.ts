@@ -48,6 +48,7 @@ export type HistoryItem = Pick<Item, "path"> & {
   updated?: Date;
   action: "play" | "pause" | "end" | "skip";
   progress: number | { override: number };
+  rate?: number;
   autoplay?: boolean;
 };
 

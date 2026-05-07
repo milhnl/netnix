@@ -58,7 +58,8 @@ const playUpdateCurrent =
       progress:
         current.action === "play"
           ? readProgress(current.progress) +
-            (now.getTime() - current.updated!.getTime()) / 1000
+            ((now.getTime() - current.updated!.getTime()) / 1000) *
+              (current.rate ?? 1)
           : current.progress,
     };
     const newCurrent = updater(almostNewCurrent as CurrentHistoryItem);
@@ -91,7 +92,8 @@ export const playProgress = (
     typeof current.progress === "number" &&
     cmpnums(
       current.progress +
-        (new Date().getTime() - current.updated!.getTime()) / 1000,
+        ((new Date().getTime() - current.updated!.getTime()) / 1000) *
+          (current.rate ?? 1),
       update,
       5,
     ) &&
@@ -102,6 +104,12 @@ export const playProgress = (
           progress: update,
         },
   );
+
+export const playRate = (update: number) =>
+  playUpdateCurrent((current) => ({
+    ...current,
+    rate: update,
+  }));
 
 export const playContinue =
   (library: Item[], action?: "end") => (history: HistoryItem[]) =>

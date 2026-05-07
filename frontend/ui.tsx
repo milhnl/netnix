@@ -247,13 +247,15 @@ const Progress: FC<{
         const actualProgress =
           progressOverride ??
           progress +
-            (new Date().getTime() - currentLog.updated!.getTime()) / 1000;
+            ((new Date().getTime() - currentLog.updated!.getTime()) / 1000) *
+              (currentLog.rate ?? 1);
         progressRef.current.value = String(actualProgress);
         progressRef.current.style.background = `linear-gradient(to right, var(--progress-color) ${(actualProgress / (current?.duration ?? 0)) * 100}%, rgba(128, 128, 128, 0.1) ${(actualProgress / (current?.duration ?? 0)) * 100}%)`;
         if ("mediaSession" in navigator) {
           navigator.mediaSession.setPositionState({
             duration: current.duration ?? 0,
             position: actualProgress,
+            playbackRate: currentLog.rate ?? 1,
           });
         }
       }
