@@ -10,36 +10,6 @@ const endOrSkip = (library: Item[], log: HistoryItem) =>
     ? ("end" as const)
     : ("skip" as const);
 
-export const playNow =
-  (library: Item[], item: Item) => (history: HistoryItem[]) =>
-    history
-      .map((x) =>
-        x.action === "play" || x.action === "pause"
-          ? {
-              ...x,
-              updated: new Date(),
-              action: endOrSkip(library, x),
-            }
-          : x,
-      )
-      .concat([
-        {
-          path: item.path,
-          date: new Date(),
-          updated: new Date(),
-          progress:
-            item.mime.startsWith("video") && !isMusic(item)
-              ? ((() => {
-                  const lastPlay = history.findLast(
-                    (x) => x.path === item.path,
-                  );
-                  if (lastPlay?.action === "skip") return lastPlay.progress;
-                })() ?? 0)
-              : 0,
-          action: "play" as const,
-        },
-      ]);
-
 type CurrentHistoryItem = Omit<HistoryItem, "action"> & {
   action: "play" | "pause";
 };
@@ -68,6 +38,28 @@ const playUpdateCurrent =
     newHistory[currentIndex] = newCurrent;
     return newHistory;
   };
+
+export const playNow =
+  (library: Item[], item: Item) => (history: HistoryItem[]) =>
+    playUpdateCurrent((current) => ({
+      ...current,
+      updated: new Date(),
+      action: endOrSkip(library, current),
+    }))(history).concat([
+      {
+        path: item.path,
+        date: new Date(),
+        updated: new Date(),
+        progress:
+          item.mime.startsWith("video") && !isMusic(item)
+            ? ((() => {
+                const lastPlay = history.findLast((x) => x.path === item.path);
+                if (lastPlay?.action === "skip") return lastPlay.progress;
+              })() ?? 0)
+            : 0,
+        action: "play" as const,
+      },
+    ]);
 
 export const playState = (
   library: Item[],
