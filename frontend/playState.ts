@@ -16,7 +16,7 @@ type CurrentHistoryItem = Omit<HistoryItem, "action"> & {
 const playUpdateCurrent =
   (updater: (current: CurrentHistoryItem) => HistoryItem) =>
   (history: HistoryItem[]): HistoryItem[] => {
-    const currentIndex = history.findIndex(
+    const currentIndex = history.findLastIndex(
       (x) => x.action === "play" || x.action === "pause",
     );
     if (currentIndex === -1) return history;
