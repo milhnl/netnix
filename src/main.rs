@@ -100,6 +100,7 @@ struct YoutubeDl {
     album_artist: Option<String>,
     track: Option<String>,
     release_date: Option<String>,
+    timestamp: Option<i64>,
     duration: Option<f64>,
     #[serde(default, with = "none_string")]
     vcodec: Option<String>,
@@ -271,6 +272,12 @@ fn parse_ytdlp_date(date: Option<&str>) -> Option<String> {
                 _ => None,
             }
         })
+}
+
+fn parse_ytdlp_timestamp(timestamp: Option<i64>) -> Option<String> {
+    jiff::Timestamp::from_second(timestamp?)
+        .map(|ts| ts.to_string())
+        .ok()
 }
 
 fn flac_get_tag(tag: &FlacTag, name: &str) -> Option<String> {
@@ -447,6 +454,7 @@ fn get_type(
                     track,
                     album,
                     release_date,
+                    timestamp,
                     vcodec,
                     acodec,
                     channel,
@@ -476,7 +484,8 @@ fn get_type(
                     tracknumber: None,
                     title,
                     genre: None,
-                    date: parse_ytdlp_date(release_date.as_deref()),
+                    date: parse_ytdlp_date(release_date.as_deref())
+                        .or_else(|| parse_ytdlp_timestamp(timestamp)),
                 };
                 path_meta
                     .entry(path.with_extension(""))
