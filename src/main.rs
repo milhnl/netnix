@@ -4,7 +4,6 @@ use lazy_static::lazy_static;
 use metaflac::{block::StreamInfo, Tag as FlacTag};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
-use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::env;
 use std::ffi::OsStr;
@@ -284,11 +283,9 @@ fn flac_get_tag(tag: &FlacTag, name: &str) -> Option<String> {
     Some(tag.get_vorbis(name)?.next()?.to_string())
 }
 
-fn get_type(
-    path: PathBuf,
-    path_meta: &mut HashMap<PathBuf, Metadata>,
-) -> Option<Item> {
-    match path.extension()?.to_str()? {
+fn get_type(path: PathBuf) -> Option<(Item, Vec<(PathBuf, Metadata)>)> {
+    let mut path_meta = Vec::new();
+    let item = match path.extension()?.to_str()? {
         "aac" => {
             let mime = get_mime_type_from_path(&path).to_string();
             Some(Item {
@@ -332,7 +329,8 @@ fn get_type(
             let genre = flac_get_tag(&tag, "genre");
             let date = flac_get_tag(&tag, "date");
             if let Some(parent) = path.parent() {
-                path_meta.entry(parent.to_owned()).or_insert_with(|| {
+                path_meta.push((
+                    parent.to_owned(),
                     Metadata::Music {
                         artist: artist.clone(),
                         albumartist: albumartist.clone(),
@@ -342,11 +340,12 @@ fn get_type(
                         title: None,
                         genre: None,
                         date: None,
-                    }
-                });
+                    },
+                ));
             }
             if let Some(parent) = path.parent().and_then(|x| x.parent()) {
-                path_meta.entry(parent.to_owned()).or_insert_with(|| {
+                path_meta.push((
+                    parent.to_owned(),
                     Metadata::Music {
                         artist: artist.clone(),
                         albumartist: albumartist.clone(),
@@ -356,8 +355,8 @@ fn get_type(
                         title: None,
                         genre: None,
                         date: None,
-                    }
-                });
+                    },
+                ));
             }
             let mime = get_mime_type_from_path(&path).to_string();
             Some(Item {
@@ -390,7 +389,8 @@ fn get_type(
                 .map(|x| x.to_string())
                 .or_else(|| tag.date_recorded().map(|x| x.to_string()));
             if let Some(parent) = path.parent() {
-                path_meta.entry(parent.to_owned()).or_insert_with(|| {
+                path_meta.push((
+                    parent.to_owned(),
                     Metadata::Music {
                         artist: artist.clone(),
                         albumartist: albumartist.clone(),
@@ -400,11 +400,12 @@ fn get_type(
                         title: None,
                         genre: None,
                         date: None,
-                    }
-                });
+                    },
+                ));
             }
             if let Some(parent) = path.parent().and_then(|x| x.parent()) {
-                path_meta.entry(parent.to_owned()).or_insert_with(|| {
+                path_meta.push((
+                    parent.to_owned(),
                     Metadata::Music {
                         artist: artist.clone(),
                         albumartist: albumartist.clone(),
@@ -414,8 +415,8 @@ fn get_type(
                         title: None,
                         genre: None,
                         date: None,
-                    }
-                });
+                    },
+                ));
             }
             let mime = get_mime_type_from_path(&path).to_string();
             Some(Item {
@@ -487,9 +488,7 @@ fn get_type(
                     date: parse_ytdlp_date(release_date.as_deref())
                         .or_else(|| parse_ytdlp_timestamp(timestamp)),
                 };
-                path_meta
-                    .entry(path.with_extension(""))
-                    .or_insert_with(|| meta.clone());
+                path_meta.push((path.with_extension(""), meta.clone()));
                 Some(Item {
                     path,
                     mime,
@@ -538,15 +537,16 @@ fn get_type(
                         if let (Some(parent), Metadata::Episode { show, .. }) =
                             (path.parent(), &meta)
                         {
-                            path_meta.entry(parent.to_owned()).or_insert_with(
-                                || Metadata::Episode {
+                            path_meta.push((
+                                parent.to_owned(),
+                                Metadata::Episode {
                                     show: show.clone(),
                                     title: None,
                                     season: None,
                                     episode: None,
                                     language: None,
                                 },
-                            );
+                            ));
                         }
                         Some(Item {
                             path,
@@ -578,17 +578,29 @@ fn get_type(
                 meta,
             })
         }
-        "jpg" | "webp" | "png" => {
-            let mime = get_mime_type_from_path(&path).to_string();
+        "jpg" | "webp" | "png" => Some(Item {
+            mime: get_mime_type_from_path(&path).to_string(),
+            path,
+            duration: None,
+            meta: Metadata::Unknown {},
+        }),
+        _ => None,
+    }?;
+    Some((item, path_meta))
+}
+
+fn resolve_artwork(
+    mut item: Item,
+    path_meta: &HashMap<PathBuf, Metadata>,
+) -> Option<Item> {
+    let path = &item.path;
+    match path.extension().and_then(|x| x.to_str()) {
+        Some("jpg" | "webp" | "png") => {
             if path.file_stem() == Some(OsStr::new("folder")) {
                 if let Some(folder) = path.parent() {
                     if let Some(meta) = path_meta.get(folder) {
-                        return Some(Item {
-                            path,
-                            mime,
-                            duration: None,
-                            meta: meta.clone(),
-                        });
+                        item.meta = meta.clone();
+                        return Some(item);
                     }
                 }
             } else if let Some(meta) = (if let (Some(folder), Some(stem)) =
@@ -602,16 +614,12 @@ fn get_type(
             })
             .and_then(|x| path_meta.get(&x))
             {
-                return Some(Item {
-                    path,
-                    mime,
-                    duration: None,
-                    meta: meta.clone(),
-                });
+                item.meta = meta.clone();
+                return Some(item);
             }
             None
         }
-        _ => None,
+        _ => Some(item),
     }
 }
 
@@ -630,57 +638,27 @@ fn main() {
         })
         .expect("Could not determine default library, provide one manually.");
     env::set_current_dir(&root).expect("Could not open library folder");
-    let mut path_meta = HashMap::<PathBuf, Metadata>::new();
+    let (items, path_meta) = WalkDir::new(&root)
+        .into_iter()
+        .filter_map(|v| v.ok())
+        .filter_map(|x| {
+            get_type(x.path().strip_prefix(&root).ok()?.to_path_buf())
+        })
+        .fold(
+            (Vec::new(), HashMap::new()),
+            |(mut items, mut path_meta), (item, metadata)| {
+                items.push(item);
+                for (path, meta) in metadata {
+                    path_meta.entry(path).or_insert(meta);
+                }
+                (items, path_meta)
+            },
+        );
     let library = Library {
         version: 0,
-        items: WalkDir::new(&root)
-            .contents_first(true)
-            .sort_by(|a, b| {
-                (match (
-                    a.path().file_stem().and_then(|x| x.to_str()),
-                    b.path().file_stem().and_then(|x| x.to_str()),
-                ) {
-                    (Some("folder"), Some("folder")) => Ordering::Equal,
-                    (_, Some("folder")) => Ordering::Less,
-                    (Some("folder"), _) => Ordering::Greater,
-                    (_, _) => Ordering::Equal,
-                })
-                .then(
-                    match (
-                        a.path()
-                            .file_stem()
-                            .and_then(|x| x.to_str())
-                            .map(|x| x.starts_with('.'))
-                            .unwrap_or(false),
-                        b.path()
-                            .file_stem()
-                            .and_then(|x| x.to_str())
-                            .map(|x| x.starts_with('.'))
-                            .unwrap_or(false),
-                    ) {
-                        (false, false) => Ordering::Equal,
-                        (false, true) => Ordering::Less,
-                        (true, false) => Ordering::Greater,
-                        (true, true) => Ordering::Equal,
-                    },
-                )
-                .then(
-                    match (a.file_type().is_dir(), b.file_type().is_dir()) {
-                        (false, false) => Ordering::Equal,
-                        (true, false) => Ordering::Less,
-                        (false, true) => Ordering::Greater,
-                        (true, true) => Ordering::Equal,
-                    },
-                )
-            })
+        items: items
             .into_iter()
-            .filter_map(|v| v.ok())
-            .filter_map(|x| {
-                get_type(
-                    x.path().strip_prefix(&root).ok()?.to_path_buf(),
-                    &mut path_meta,
-                )
-            })
+            .filter_map(|item| resolve_artwork(item, &path_meta))
             .collect(),
     };
     println!("{}", serde_json::to_string(&library).unwrap());
