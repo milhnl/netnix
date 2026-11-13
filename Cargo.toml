@@ -6,10 +6,9 @@ edition = "2018"
 
 [dependencies]
 directories = "3"
-id3 = "1.0.0"
 jiff = "0.2"
 lazy_static = "1.4.0"
-metaflac = "0.2.5"
+symphonia = { version = "0.6.1", default-features = false, features = ["all-meta", "flac", "mp3", "isomp4", "mkv", "wav"] }
 walkdir = "2"
 regex = "1"
 serde = { version = "1", features = ["derive"] }

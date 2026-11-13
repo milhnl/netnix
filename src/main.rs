@@ -1,7 +1,5 @@
 use directories::ProjectDirs;
-use id3::{Tag as Id3Tag, TagLike};
 use lazy_static::lazy_static;
-use metaflac::{block::StreamInfo, Tag as FlacTag};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -10,6 +8,9 @@ use std::ffi::OsStr;
 use std::fs::File;
 use std::io::BufReader;
 use std::path::{Component, Path, PathBuf};
+use symphonia::core::formats::{probe::Hint, TrackType};
+use symphonia::core::io::MediaSourceStream;
+use symphonia::core::meta::StandardTag;
 use walkdir::WalkDir;
 
 #[derive(PartialEq)]
@@ -279,8 +280,83 @@ fn parse_ytdlp_timestamp(timestamp: Option<i64>) -> Option<String> {
         .ok()
 }
 
-fn flac_get_tag(tag: &FlacTag, name: &str) -> Option<String> {
-    Some(tag.get_vorbis(name)?.next()?.to_string())
+fn read_media_metadata(path: &Path) -> Option<(Metadata, Option<f64>)> {
+    let source = MediaSourceStream::new(
+        Box::new(File::open(path).ok()?),
+        Default::default(),
+    );
+    let mut hint = Hint::new();
+    if let Some(extension) = path.extension().and_then(|x| x.to_str()) {
+        hint.with_extension(extension);
+    }
+    let mut format = symphonia::default::get_probe()
+        .probe(&hint, source, Default::default(), Default::default())
+        .ok()?;
+    let duration = format
+        .default_track(TrackType::Audio)
+        .and_then(|track| track.time_base?.calc_duration(track.duration?))
+        .map(|time| time.as_secs_f64())
+        .filter(|duration| duration.is_finite() && *duration > 0.0);
+    let mut artist = None;
+    let mut albumartist = None;
+    let mut album = None;
+    let mut discnumber = None;
+    let mut tracknumber = None;
+    let mut title = None;
+    let mut genre = None;
+    let mut release_date = None;
+    let mut recording_date = None;
+    let mut metadata = format.metadata();
+    while let Some(revision) = metadata.current() {
+        for tag in &revision.media.tags {
+            match &tag.std {
+                Some(StandardTag::Artist(value)) => {
+                    artist = Some(value.to_string())
+                }
+                Some(StandardTag::AlbumArtist(value)) => {
+                    albumartist = Some(value.to_string())
+                }
+                Some(StandardTag::Album(value)) => {
+                    album = Some(value.to_string())
+                }
+                Some(StandardTag::DiscNumber(value)) => {
+                    discnumber = Some(value.to_string())
+                }
+                Some(StandardTag::TrackNumber(value)) => {
+                    tracknumber = Some(value.to_string())
+                }
+                Some(StandardTag::TrackTitle(value)) => {
+                    title = Some(value.to_string())
+                }
+                Some(StandardTag::Genre(value)) => {
+                    genre = Some(value.to_string())
+                }
+                Some(StandardTag::ReleaseDate(value)) => {
+                    release_date = Some(value.to_string())
+                }
+                Some(StandardTag::RecordingDate(value)) => {
+                    recording_date = Some(value.to_string())
+                }
+                _ => {}
+            }
+        }
+        if metadata.pop().is_none() {
+            break;
+        }
+    }
+    Some((
+        Metadata::Music {
+            artist,
+            albumartist,
+            album,
+            discnumber,
+            tracknumber,
+            title,
+            genre,
+            date: release_date.or(recording_date),
+        },
+        duration,
+    ))
 }
 
 fn get_type(path: PathBuf) -> Option<(Item, Vec<(PathBuf, Metadata)>)> {
@@ -295,39 +371,17 @@ fn get_type(path: PathBuf) -> Option<(Item, Vec<(PathBuf, Metadata)>)> {
                 duration: None,
             })
         }
-        "flac" => {
-            let tag = FlacTag::read_from_path(&path).ok()?;
-            let duration = {
-                if let Some(StreamInfo {
-                    total_samples: samples,
-                    sample_rate: rate,
+        "flac" | "mp3" => {
+            let (meta, duration) = read_media_metadata(&path)?;
+            let (artist, albumartist, album) = match &meta {
+                Metadata::Music {
+                    artist,
+                    albumartist,
+                    album,
                     ..
-                }) = tag.get_streaminfo()
-                {
-                    let duration = (*samples as f64) / ((*rate) as f64);
-                    if duration.is_nan() || duration == 0f64 {
-                        None
-                    } else {
-                        Some(duration)
-                    }
-                } else {
-                    Some(0f64)
-                }
+                } => (artist, albumartist, album),
+                _ => unreachable!(),
             };
-            let artist = flac_get_tag(&tag, "artist");
-            let albumartist = flac_get_tag(&tag, "albumartist");
-            let album = flac_get_tag(&tag, "album");
-            let discnumber = flac_get_tag(&tag, "discnumber");
-            let tracknumber = flac_get_tag(&tag, "tracknumber").map(|x| {
-                x.trim_start_matches("0")
-                    .split('/')
-                    .next()
-                    .unwrap()
-                    .to_string()
-            });
-            let title = flac_get_tag(&tag, "title");
-            let genre = flac_get_tag(&tag, "genre");
-            let date = flac_get_tag(&tag, "date");
             if let Some(parent) = path.parent() {
                 path_meta.push((
                     parent.to_owned(),
@@ -363,85 +417,18 @@ fn get_type(path: PathBuf) -> Option<(Item, Vec<(PathBuf, Metadata)>)> {
                 path,
                 mime,
                 duration,
-                meta: Metadata::Music {
-                    artist,
-                    albumartist,
-                    album,
-                    discnumber,
-                    tracknumber,
-                    title,
-                    genre,
-                    date,
-                },
-            })
-        }
-        "mp3" => {
-            let tag = Id3Tag::read_from_path(&path).ok()?;
-            let artist = tag.artist().map(|x| x.to_string());
-            let albumartist = tag.album_artist().map(|x| x.to_string());
-            let album = tag.album().map(|x| x.to_string());
-            let discnumber = tag.disc().map(|x| x.to_string());
-            let tracknumber = tag.track().map(|x| x.to_string());
-            let title = tag.title().map(|x| x.to_string());
-            let genre = tag.genre().map(|x| x.to_string());
-            let date = tag
-                .year()
-                .map(|x| x.to_string())
-                .or_else(|| tag.date_recorded().map(|x| x.to_string()));
-            if let Some(parent) = path.parent() {
-                path_meta.push((
-                    parent.to_owned(),
-                    Metadata::Music {
-                        artist: artist.clone(),
-                        albumartist: albumartist.clone(),
-                        album: album.clone(),
-                        discnumber: None,
-                        tracknumber: None,
-                        title: None,
-                        genre: None,
-                        date: None,
-                    },
-                ));
-            }
-            if let Some(parent) = path.parent().and_then(|x| x.parent()) {
-                path_meta.push((
-                    parent.to_owned(),
-                    Metadata::Music {
-                        artist: artist.clone(),
-                        albumartist: albumartist.clone(),
-                        album: None,
-                        discnumber: None,
-                        tracknumber: None,
-                        title: None,
-                        genre: None,
-                        date: None,
-                    },
-                ));
-            }
-            let mime = get_mime_type_from_path(&path).to_string();
-            Some(Item {
-                path,
-                mime,
-                duration: None,
-                meta: Metadata::Music {
-                    artist,
-                    albumartist,
-                    album,
-                    discnumber,
-                    tracknumber,
-                    title,
-                    genre,
-                    date,
-                },
+                meta,
             })
         }
         "wav" => {
+            let (meta, duration) = read_media_metadata(&path)
+                .unwrap_or((Metadata::Unknown {}, None));
             let mime = get_mime_type_from_path(&path).to_string();
             Some(Item {
                 path,
                 mime,
-                duration: None,
-                meta: Metadata::Unknown {},
+                duration,
+                meta,
             })
         }
         "m4a" | "mkv" | "mp4" | "webm" => match info_json_exists(&path) {
