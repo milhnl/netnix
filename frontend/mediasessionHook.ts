@@ -5,6 +5,7 @@ type ActionHandlers = {
 export const useActionHandlers = (actionHandlers: ActionHandlers) => {
   const actionHandlersRef = useRef<ActionHandlers>({});
   useEffect(() => {
+    if (!("mediaSession" in navigator)) return;
     (
       Object.entries(
         Object.assign(
@@ -24,7 +25,11 @@ export const useActionHandlers = (actionHandlers: ActionHandlers) => {
         console.log(
           `${handler ? "R" : "Unr"}egistering handler for ${action}`,
         );
-        navigator.mediaSession.setActionHandler(action, handler ?? null);
+        try {
+          navigator.mediaSession.setActionHandler(action, handler ?? null);
+        } catch {
+          //May be unsupported, which isn't very interesting
+        }
       }
     });
   }, [actionHandlers]);
