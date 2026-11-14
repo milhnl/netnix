@@ -1,5 +1,5 @@
 import { DOMAttributes, FunctionComponent as FC } from "preact";
-import { useEffect, useContext, useRef } from "preact/hooks";
+import { useEffect, useContext, useLayoutEffect, useRef } from "preact/hooks";
 import { useLocation } from "wouter-preact";
 import { Item, isEpisode, isFilm, isMusic } from "./types.ts";
 import {
@@ -68,17 +68,25 @@ export const PlayerElement: FC = () => {
         : undefined;
   const playbackRate = currentLog?.rate;
   // Work around iOS Safari not firing fullscreenchange and pausing video
-  useEffect(() => {
+  const resumeTimer = useRef<ReturnType<typeof setTimeout>>();
+  useLayoutEffect(() => {
     const elem = mediaRef.current;
-    if (!(elem instanceof HTMLVideoElement)) return;
+    if (!playing || !(elem instanceof HTMLVideoElement)) return;
     const fullscreenchangeHandler = () => {
-      if (!elem.paused)
-        setTimeout(() => playingSync.current || elem.play(), 500);
+      if (elem.paused) return;
+      clearTimeout(resumeTimer.current);
+      resumeTimer.current = setTimeout(() => {
+        resumeTimer.current = undefined;
+        if (elem.isConnected && elem.paused) elem.play().catch(console.warn);
+      }, 500);
     };
     elem.addEventListener("webkitendfullscreen", fullscreenchangeHandler);
-    return () =>
+    return () => {
+      clearTimeout(resumeTimer.current);
+      resumeTimer.current = undefined;
       elem.removeEventListener("webkitendfullscreen", fullscreenchangeHandler);
-  }, [mediaRef.current]);
+    };
+  }, [playing, currentSrc, currentLog?.date.getTime(), current?.mime]);
   //Try to save current position on page reload/whatever
   useEffect(() => {
     const listener = () => {
@@ -101,7 +109,9 @@ export const PlayerElement: FC = () => {
   const sharedProps: Partial<DOMAttributes<HTMLMediaElement>> = {
     onPlay: () => playingSync.current || setState(playState(library, "play")),
     onPause: () =>
-      playingSync.current || setState(playState(library, "pause")),
+      playingSync.current ||
+      resumeTimer.current !== undefined ||
+      setState(playState(library, "pause")),
     onEnded: () => setState(playContinue(library, "end")),
     onCanPlay: ({ target }) => {
       if (
