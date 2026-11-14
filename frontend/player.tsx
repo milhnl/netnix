@@ -14,6 +14,7 @@ import {
   playProgress,
   playRate,
   playContinue,
+  readProgress,
 } from "./playState.ts";
 import { LibraryContext, StateContext } from "./context.ts";
 import { AuthContext } from "./auth.tsx";
@@ -63,9 +64,7 @@ export const PlayerElement: FC = () => {
   const timeOverride =
     currentLog?.progress instanceof Object
       ? currentLog.progress.override
-      : mediaRef.current?.src !== currentSrc
-        ? currentLog?.progress
-        : undefined;
+      : undefined;
   const playbackRate = currentLog?.rate;
   // Work around iOS Safari not firing fullscreenchange and pausing video
   const resumeTimer = useRef<ReturnType<typeof setTimeout>>();
@@ -113,6 +112,12 @@ export const PlayerElement: FC = () => {
       resumeTimer.current !== undefined ||
       setState(playState(library, "pause")),
     onEnded: () => setState(playContinue(library, "end")),
+    onLoadedMetadata: ({ target }) =>
+      target && (target as HTMLMediaElement).played?.length === 0 && currentLog
+        ? ((target as HTMLMediaElement).currentTime = readProgress(
+            currentLog.progress,
+          ))
+        : undefined,
     onCanPlay: ({ target }) => {
       if (
         target &&
@@ -128,8 +133,11 @@ export const PlayerElement: FC = () => {
     onRateChange: ({ target }) =>
       setState(playRate((target as HTMLMediaElement).playbackRate)),
     onTimeUpdate: (ev) => {
-      const progress = (ev.target as HTMLMediaElement | null)?.currentTime;
-      if (progress) setState(playProgress(progress));
+      const elem = ev.target as HTMLMediaElement | null;
+      //Check whether this is not an early emitted zero
+      const progress = elem?.readyState ? elem.currentTime : undefined;
+      if (progress !== undefined && Number.isFinite(progress))
+        setState(playProgress(progress));
     },
   };
   useEffect(() => {
@@ -150,7 +158,11 @@ export const PlayerElement: FC = () => {
     }
   }, [playing, mediaRef]);
   useEffect(() => {
-    if (mediaRef.current && timeOverride)
+    if (
+      mediaRef.current &&
+      timeOverride !== undefined &&
+      mediaRef.current.readyState >= HTMLMediaElement.HAVE_METADATA
+    )
       mediaRef.current.currentTime = timeOverride;
   }, [timeOverride, mediaRef]);
   useEffect(() => {
