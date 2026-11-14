@@ -25,7 +25,8 @@ format:
 frontend/dist/index.html: Makefile frontend/index.html frontend/index.tsx \
 		frontend/App.tsx frontend/auth.tsx frontend/context.ts \
 		frontend/fileView.tsx frontend/mediasessionHook.ts frontend/music.tsx \
-		frontend/player.tsx frontend/playState.ts frontend/video.tsx \
+		frontend/player.tsx frontend/playState.ts frontend/playStateSync.ts \
+		frontend/state.ts frontend/types.ts frontend/video.tsx \
 		frontend/ui.tsx frontend/utility.ts
 	mkdir -p frontend/dist
 	cd frontend; deno bundle --minify --platform browser \
