@@ -86,6 +86,25 @@ export const PlayerElement: FC = () => {
         fullscreenchangeHandler,
       );
   }, [mediaRef.current]);
+  //Try to save current position on page reload/whatever
+  useEffect(() => {
+    const listener = () => {
+      return mediaRef.current?.readyState
+        ? setState(playProgress(mediaRef.current.currentTime, true))
+        : undefined;
+    };
+    const targets = [
+      [window, "pagehide"] as const,
+      [document, "visibilitychange"] as const,
+    ];
+    targets.forEach(([target, eventName]) =>
+      target.addEventListener(eventName, listener),
+    );
+    return () =>
+      targets.forEach(([target, eventName]) =>
+        target.removeEventListener(eventName, listener),
+      );
+  }, [mediaRef]);
   const currentLog = state.history.find((x) =>
     ["play", "pause"].includes(x.action),
   );
