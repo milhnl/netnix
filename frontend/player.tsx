@@ -69,21 +69,15 @@ export const PlayerElement: FC = () => {
   const playbackRate = currentLog?.rate;
   // Work around iOS Safari not firing fullscreenchange and pausing video
   useEffect(() => {
-    if (!(mediaRef.current instanceof HTMLVideoElement)) return;
-    const fullscreenchangeHandler = (ev: Event) => {
-      const elem = ev.target as HTMLVideoElement;
+    const elem = mediaRef.current;
+    if (!(elem instanceof HTMLVideoElement)) return;
+    const fullscreenchangeHandler = () => {
       if (!elem.paused)
         setTimeout(() => playingSync.current || elem.play(), 500);
     };
-    mediaRef.current.addEventListener(
-      "webkitendfullscreen",
-      fullscreenchangeHandler,
-    );
+    elem.addEventListener("webkitendfullscreen", fullscreenchangeHandler);
     return () =>
-      document.removeEventListener(
-        "webkitendfullscreen",
-        fullscreenchangeHandler,
-      );
+      elem.removeEventListener("webkitendfullscreen", fullscreenchangeHandler);
   }, [mediaRef.current]);
   //Try to save current position on page reload/whatever
   useEffect(() => {
