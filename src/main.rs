@@ -359,6 +359,13 @@ fn read_media_metadata(path: &Path) -> Option<(Metadata, Option<f64>)> {
     ))
 }
 
+fn starts_with_case_insensitive(s: &str, prefix: &str) -> bool {
+    s.chars()
+        .zip(prefix.chars())
+        .all(|(a, b)| a.eq_ignore_ascii_case(&b))
+        && s.chars().count() >= prefix.chars().count()
+}
+
 fn get_type(path: PathBuf) -> Option<(Item, Vec<(PathBuf, Metadata)>)> {
     let mut path_meta = Vec::new();
     let item = match path.extension()?.to_str()? {
@@ -457,7 +464,8 @@ fn get_type(path: PathBuf) -> Option<(Item, Vec<(PathBuf, Metadata)>)> {
                 let albumartist = yt_json.album_artist.or_else(|| {
                     let channel = channel?;
                     let channel = channel.trim_end_matches(" - Topic");
-                    if artist.as_ref()?.starts_with(channel) {
+                    if starts_with_case_insensitive(artist.as_ref()?, channel)
+                    {
                         Some(channel.to_string())
                     } else {
                         None
