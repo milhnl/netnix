@@ -54,6 +54,19 @@ export const PlayerElement: FC = () => {
   const setMediaRef = (node: HTMLVideoElement | HTMLAudioElement | null) => {
     mediaRef.current = node;
   };
+  const currentLog = state.history.find((x) =>
+    ["play", "pause"].includes(x.action),
+  );
+  const current = library.find((x) => x.path === currentLog?.path) ?? null;
+  const currentSrc = asURL(current?.path, auth);
+  const playing = currentLog?.action === "play";
+  const timeOverride =
+    currentLog?.progress instanceof Object
+      ? currentLog.progress.override
+      : mediaRef.current?.src !== currentSrc
+        ? currentLog?.progress
+        : undefined;
+  const playbackRate = currentLog?.rate;
   // Work around iOS Safari not firing fullscreenchange and pausing video
   useEffect(() => {
     if (!(mediaRef.current instanceof HTMLVideoElement)) return;
@@ -91,19 +104,6 @@ export const PlayerElement: FC = () => {
         target.removeEventListener(eventName, listener),
       );
   }, [mediaRef]);
-  const currentLog = state.history.find((x) =>
-    ["play", "pause"].includes(x.action),
-  );
-  const current = library.find((x) => x.path === currentLog?.path) ?? null;
-  const currentSrc = asURL(current?.path, auth);
-  const playing = currentLog?.action === "play";
-  const timeOverride =
-    currentLog?.progress instanceof Object
-      ? currentLog.progress.override
-      : mediaRef.current?.src !== currentSrc
-        ? currentLog?.progress
-        : undefined;
-  const playbackRate = currentLog?.rate;
   const sharedProps: Partial<DOMAttributes<HTMLMediaElement>> = {
     onPlay: () => playingSync.current || setState(playState(library, "play")),
     onPause: () =>
