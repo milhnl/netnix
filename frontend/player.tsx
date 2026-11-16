@@ -175,6 +175,7 @@ export const PlayerElement: FC = () => {
         src={currentSrc}
         playsinline
         webkit-playsinline
+        preload="metadata"
         {...sharedProps}
         {...{
           onfullscreenchange: ({ currentTarget }: Event) =>
