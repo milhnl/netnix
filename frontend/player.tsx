@@ -173,7 +173,8 @@ export const PlayerElement: FC = () => {
       <video
         ref={setMediaRef}
         src={currentSrc}
-        playsinline={isMusic(current)}
+        playsinline
+        webkit-playsinline
         {...sharedProps}
         {...{
           onfullscreenchange: ({ currentTarget }: Event) =>
